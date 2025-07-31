@@ -1,6 +1,11 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
-import HardenedReactMarkdown from "./hardened-react-markdown";
+import ReactMarkdown from "react-markdown";
+import type { Options } from "react-markdown";
+import hardenReactMarkdown from "./harden-react-markdown";
+
+// Create the hardened version using our function
+const HardenedReactMarkdown = hardenReactMarkdown(ReactMarkdown);
 
 describe("HardenedMarkdown", () => {
   // Helper function to test blocked URLs concisely
@@ -642,6 +647,72 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
     });
   });
 
+  describe("Comprehensive URL attribute coverage", () => {
+    it("handles cite attribute in blockquotes", () => {
+      const CustomBlockquote = ({ cite, children, ...props }: any) => (
+        <blockquote cite={cite} {...props}>
+          {children}
+          {cite && (
+            <footer>
+              Source: <a href={cite}>{cite}</a>
+            </footer>
+          )}
+        </blockquote>
+      );
+
+      render(
+        <HardenedReactMarkdown
+          defaultOrigin="https://example.com"
+          allowedLinkPrefixes={["https://trusted.com/"]}
+          components={{ blockquote: CustomBlockquote }}
+        >
+          {"> Quote with citation"}
+        </HardenedReactMarkdown>
+      );
+
+      // The cite attribute would need to be handled in the custom component
+      // Our hardenReactMarkdown only filters a and img components by default
+      expect(screen.getByText("Quote with citation")).toBeInTheDocument();
+    });
+
+    it("only filters href and src attributes by default", () => {
+      // Test that our component only handles the two main URL vectors in markdown
+      const markdown = `
+[Link](https://evil.com)
+![Image](https://evil.com/image.jpg)
+      `;
+
+      render(
+        <HardenedReactMarkdown defaultOrigin="https://example.com">
+          {markdown}
+        </HardenedReactMarkdown>
+      );
+
+      // Both should be blocked
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
+      expect(screen.queryByRole("img")).not.toBeInTheDocument();
+      expect(screen.getByText("Link [blocked]")).toBeInTheDocument();
+      expect(screen.getByText("[Image blocked: Image]")).toBeInTheDocument();
+    });
+
+    it("does not handle other potential URL attributes without custom components", () => {
+      // Standard markdown doesn't generate elements with action, formaction, data, poster, etc.
+      // These would only come from raw HTML or custom components
+      const markdown = "Regular markdown content";
+
+      render(
+        <HardenedReactMarkdown
+          defaultOrigin="https://example.com"
+          allowedLinkPrefixes={["https://trusted.com/"]}
+        >
+          {markdown}
+        </HardenedReactMarkdown>
+      );
+
+      expect(screen.getByText("Regular markdown content")).toBeInTheDocument();
+    });
+  });
+
   describe("Specific bypass attempts", () => {
     it("correctly handles URLs that appear to bypass but actually resolve correctly", () => {
       // This URL resolves to https://trusted.com/evil.com/image.jpg which should be allowed
@@ -679,6 +750,104 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
         expect(screen.queryByRole("link")).not.toBeInTheDocument();
         unmount();
       });
+    });
+  });
+
+  describe("Function wrapper behavior", () => {
+    it("can wrap different markdown components with proper type safety", () => {
+      // Create a custom markdown component that properly extends Options
+      const CustomMarkdown = (props: Options) => (
+        <div data-testid="custom-markdown">
+          <ReactMarkdown {...props} />
+        </div>
+      );
+      const HardenedCustomMarkdown = hardenReactMarkdown(CustomMarkdown);
+
+      render(
+        <HardenedCustomMarkdown
+          defaultOrigin="https://example.com"
+          allowedLinkPrefixes={["https://github.com/"]}
+        >
+          {"[Test](https://github.com/user/repo)"}
+        </HardenedCustomMarkdown>
+      );
+
+      expect(screen.getByTestId("custom-markdown")).toBeInTheDocument();
+      expect(screen.getByRole("link")).toHaveAttribute(
+        "href",
+        "https://github.com/user/repo"
+      );
+    });
+
+    it("preserves the original component functionality and enforces Options compatibility", () => {
+      const HardenedMarkdown = hardenReactMarkdown(ReactMarkdown);
+
+      render(
+        <HardenedMarkdown
+          defaultOrigin="https://example.com"
+          allowedLinkPrefixes={["https://github.com/"]}
+          remarkPlugins={[]}
+          rehypePlugins={[]}
+        >
+          {"# Test Heading"}
+        </HardenedMarkdown>
+      );
+
+      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+        "Test Heading"
+      );
+    });
+
+    it("maintains strict type checking for Options properties", () => {
+      // This test verifies that our types correctly infer from the wrapped component
+      const StrictMarkdown = (props: Options & { customProp?: string }) => (
+        <div data-testid="strict-markdown">
+          <ReactMarkdown {...props} />
+          {props.customProp && (
+            <span data-testid="custom-prop">{props.customProp}</span>
+          )}
+        </div>
+      );
+
+      const HardenedStrictMarkdown = hardenReactMarkdown(StrictMarkdown);
+
+      render(
+        <HardenedStrictMarkdown
+          defaultOrigin="https://example.com"
+          allowedLinkPrefixes={["https://github.com/"]}
+          customProp="test-value"
+        >
+          {"# Strict Test"}
+        </HardenedStrictMarkdown>
+      );
+
+      expect(screen.getByTestId("strict-markdown")).toBeInTheDocument();
+      expect(screen.getByTestId("custom-prop")).toHaveTextContent("test-value");
+      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+        "Strict Test"
+      );
+    });
+
+    it("enforces proper return type from hardenReactMarkdown function", () => {
+      const HardenedMarkdown = hardenReactMarkdown(ReactMarkdown);
+
+      // TypeScript should infer this as a ComponentType with the correct props
+      const isComponentType = typeof HardenedMarkdown === "function";
+      expect(isComponentType).toBe(true);
+
+      // Test that the component accepts the expected props structure
+      const TestWrapper = () => (
+        <HardenedMarkdown
+          defaultOrigin="https://example.com"
+          allowedLinkPrefixes={["https://github.com/"]}
+          children="# Test"
+        />
+      );
+
+      render(<TestWrapper />);
+      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
+        "Test"
+      );
     });
   });
 });

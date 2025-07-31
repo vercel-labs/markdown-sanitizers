@@ -3,7 +3,10 @@
 import { useState } from "react";
 import Image from "next/image";
 import ReactMarkdown from "react-markdown";
-import HardenedReactMarkdown from "@/components/hardened-react-markdown";
+import hardenReactMarkdown from "@/components/harden-react-markdown";
+
+// Create the hardened version using our function
+const HardenedReactMarkdown = hardenReactMarkdown(ReactMarkdown);
 
 export default function Home() {
   const [useHardened, setUseHardened] = useState(true);
