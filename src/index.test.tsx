@@ -2,7 +2,7 @@ import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
 import ReactMarkdown from "react-markdown";
 import type { Options } from "react-markdown";
-import hardenReactMarkdown from "./harden-react-markdown";
+import hardenReactMarkdown from "./index";
 
 // Create the hardened version using our function
 const HardenedReactMarkdown = hardenReactMarkdown(ReactMarkdown);
