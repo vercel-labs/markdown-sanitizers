@@ -3,7 +3,7 @@
 import { useState } from "react";
 import Image from "next/image";
 import ReactMarkdown from "react-markdown";
-import HardenedReactMarkdown from "@/components/hardened-react-markdown.test";
+import HardenedReactMarkdown from "@/components/hardened-react-markdown";
 
 export default function Home() {
   const [useHardened, setUseHardened] = useState(true);

@@ -1,684 +1,108 @@
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
-import HardenedReactMarkdown from "./hardened-react-markdown.test";
+"use client";
 
-describe("HardenedMarkdown", () => {
-  // Helper function to test blocked URLs concisely
-  const testBlockedUrls = (
-    urlType: "link" | "image",
-    badUrls: string[],
-    allowedPrefixes: string[],
-    defaultOrigin: string
-  ) => {
-    badUrls.forEach((url) => {
-      it(`blocks ${urlType} with URL: ${url}`, () => {
-        const markdown =
-          urlType === "link" ? `[Test](${url})` : `![Test](${url})`;
+import ReactMarkdown from "react-markdown";
+import type { Components, Options } from "react-markdown";
 
-        render(
-          <HardenedReactMarkdown
-            defaultOrigin={defaultOrigin}
-            allowedLinkPrefixes={urlType === "link" ? allowedPrefixes : []}
-            allowedImagePrefixes={urlType === "image" ? allowedPrefixes : []}
-          >
-            {markdown}
-          </HardenedReactMarkdown>
-        );
+interface HardenedMarkdownProps extends Options {
+  defaultOrigin?: string;
+  allowedLinkPrefixes?: string[];
+  allowedImagePrefixes?: string[];
+}
 
-        if (urlType === "link") {
-          expect(screen.queryByRole("link")).not.toBeInTheDocument();
-          expect(screen.getByText("Test [blocked]")).toBeInTheDocument();
-        } else {
-          expect(screen.queryByRole("img")).not.toBeInTheDocument();
-          expect(screen.getByText("[Image blocked: Test]")).toBeInTheDocument();
-        }
-      });
-    });
+export default function HardenedReactMarkdown({
+  defaultOrigin = "",
+  allowedLinkPrefixes = [],
+  allowedImagePrefixes = [],
+  components: userComponents,
+  ...reactMarkdownProps
+}: HardenedMarkdownProps) {
+  if (
+    !defaultOrigin &&
+    (allowedLinkPrefixes.length || allowedImagePrefixes.length)
+  ) {
+    throw new Error(
+      "defaultOrigin is required when allowedLinkPrefixes or allowedImagePrefixes are provided"
+    );
+  }
+
+  const parseUrl = (url: unknown): URL | null => {
+    if (typeof url !== "string") return null;
+    try {
+      const urlObject = new URL(url, defaultOrigin);
+      return urlObject;
+    } catch (error) {
+      return null;
+    }
   };
 
-  describe("defaultOrigin requirement", () => {
-    it("throws error when allowedLinkPrefixes provided without defaultOrigin", () => {
-      expect(() => {
-        render(
-          <HardenedReactMarkdown allowedLinkPrefixes={["https://github.com/"]}>
-            {"[Test](https://github.com)"}
-          </HardenedReactMarkdown>
-        );
-      }).toThrow(
-        "defaultOrigin is required when allowedLinkPrefixes or allowedImagePrefixes are provided"
-      );
-    });
+  const isPathRelativeUrl = (url: unknown): boolean => {
+    if (typeof url !== "string") return false;
+    return url.startsWith("/");
+  };
 
-    it("throws error when allowedImagePrefixes provided without defaultOrigin", () => {
-      expect(() => {
-        render(
-          <HardenedReactMarkdown
-            allowedImagePrefixes={["https://example.com/"]}
+  const transformUrl = (
+    url: unknown,
+    allowedPrefixes: string[]
+  ): string | null => {
+    if (!url) return null;
+    // If the input is path relative, we output a path relative URL as well,
+    // however, we always run the same checks on an absolute URL and we
+    // always rescronstruct the output from the parsed URL to ensure that
+    // the output is always a valid URL.
+    const inputWasRelative = isPathRelativeUrl(url);
+    const urlString = parseUrl(url);
+    if (
+      urlString &&
+      allowedPrefixes.some((prefix) => urlString.href.startsWith(prefix))
+    ) {
+      if (inputWasRelative) {
+        return urlString.pathname + urlString.search + urlString.hash;
+      }
+      return urlString.href;
+    }
+    return null;
+  };
+
+  const hardenedComponents: Components = {
+    a: ({ href, children, ...props }) => {
+      const transformedUrl = transformUrl(href, allowedLinkPrefixes);
+      if (transformedUrl !== null) {
+        return (
+          <a
+            href={transformedUrl}
+            {...props}
+            target="_blank"
+            rel="noopener noreferrer"
           >
-            {"![Test](https://example.com/image.jpg)"}
-          </HardenedReactMarkdown>
+            {children}
+          </a>
         );
-      }).toThrow(
-        "defaultOrigin is required when allowedLinkPrefixes or allowedImagePrefixes are provided"
+      }
+      return (
+        <span className="text-gray-500" title={`Blocked URL: ${href}`}>
+          {children} [blocked]
+        </span>
       );
-    });
-
-    it("does not throw when no prefixes are provided", () => {
-      expect(() => {
-        render(
-          <HardenedReactMarkdown>
-            {"[Test](https://github.com)"}
-          </HardenedReactMarkdown>
-        );
-      }).not.toThrow();
-    });
-  });
-
-  describe("URL transformation", () => {
-    it("preserves relative URLs when input is relative and allowed", () => {
-      render(
-        <HardenedReactMarkdown
-          defaultOrigin="https://example.com"
-          allowedLinkPrefixes={["https://example.com/"]}
-        >
-          {"[Test](/path/to/page?query=1#hash)"}
-        </HardenedReactMarkdown>
+    },
+    img: ({ src, alt, ...props }) => {
+      const transformedUrl = transformUrl(src, allowedImagePrefixes);
+      if (transformedUrl !== null) {
+        return <img src={transformedUrl} alt={alt} {...props} />;
+      }
+      return (
+        <span className="inline-block bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-3 py-1 rounded text-sm">
+          [Image blocked: {alt || "No description"}]
+        </span>
       );
-
-      const link = screen.getByRole("link");
-      expect(link).toHaveAttribute("href", "/path/to/page?query=1#hash");
-    });
-
-    it("returns absolute URL when input is absolute and allowed", () => {
-      render(
-        <HardenedReactMarkdown
-          defaultOrigin="https://example.com"
-          allowedLinkPrefixes={["https://github.com/"]}
-        >
-          {"[Test](https://github.com/user/repo)"}
-        </HardenedReactMarkdown>
-      );
-
-      const link = screen.getByRole("link");
-      expect(link).toHaveAttribute("href", "https://github.com/user/repo");
-    });
-
-    it("correctly resolves relative URLs against defaultOrigin for validation", () => {
-      render(
-        <HardenedReactMarkdown
-          defaultOrigin="https://trusted.com"
-          allowedLinkPrefixes={["https://trusted.com/"]}
-        >
-          {"[Test](/api/data)"}
-        </HardenedReactMarkdown>
-      );
-
-      const link = screen.getByRole("link");
-      expect(link).toHaveAttribute("href", "/api/data");
-    });
-
-    it("blocks relative URLs that resolve to disallowed origins", () => {
-      render(
-        <HardenedReactMarkdown
-          defaultOrigin="https://untrusted.com"
-          allowedLinkPrefixes={["https://trusted.com/"]}
-        >
-          {"[Test](/api/data)"}
-        </HardenedReactMarkdown>
-      );
-
-      expect(screen.queryByRole("link")).not.toBeInTheDocument();
-      expect(screen.getByText("Test [blocked]")).toBeInTheDocument();
-    });
-
-    it("handles protocol-relative URLs", () => {
-      render(
-        <HardenedReactMarkdown
-          defaultOrigin="https://example.com"
-          allowedLinkPrefixes={["https://cdn.example.com/"]}
-        >
-          {"[Test](//cdn.example.com/resource)"}
-        </HardenedReactMarkdown>
-      );
-
-      const link = screen.getByRole("link");
-      // Protocol-relative URLs become relative paths when input was relative
-      expect(link).toHaveAttribute("href", "/resource");
-    });
-
-    it("normalizes URLs to prevent bypasses", () => {
-      render(
-        <HardenedReactMarkdown
-          defaultOrigin="https://example.com"
-          allowedLinkPrefixes={["https://github.com/"]}
-        >
-          {"[Test](https://github.com/../../../evil.com)"}
-        </HardenedReactMarkdown>
-      );
-
-      // URL normalization resolves to https://github.com/evil.com which is allowed
-      // since it starts with https://github.com/
-      const link = screen.getByRole("link");
-      expect(link).toHaveAttribute("href", "https://github.com/evil.com");
-    });
-  });
-
-  describe("Bad URL cases - Links", () => {
-    const badLinkUrls = [
-      'javascript:alert("XSS")',
-      'data:text/html,<script>alert("XSS")</script>',
-      'vbscript:msgbox("XSS")',
-      "file:///etc/passwd",
-      "about:blank",
-      "blob:https://example.com/uuid",
-      "mailto:user@example.com",
-      "tel:+1234567890",
-      "ftp://ftp.example.com/file",
-      "../../../etc/passwd",
-      "//evil.com/malware",
-      "https://evil.com@github.com",
-      "https://github.com.evil.com",
-      "https://github.com%2e%2e%2f%2e%2e%2fevil.com",
-      "https://github.com\\.evil.com",
-      "https://github.com%00.evil.com",
-      "https://github.com%E2%80%8B.evil.com", // Zero-width space
-      "\x00javascript:alert(1)",
-      " javascript:alert(1)",
-      "javascript\x00:alert(1)",
-      "jav&#x61;script:alert(1)",
-      "jav&#97;script:alert(1)",
-    ];
-
-    testBlockedUrls(
-      "link",
-      badLinkUrls,
-      ["https://github.com/"],
-      "https://example.com"
-    );
-  });
-
-  describe("Bad URL cases - Images", () => {
-    const badImageUrls = [
-      "javascript:void(0)",
-      "vbscript:execute",
-      "file:///etc/passwd",
-      "blob:https://example.com/uuid",
-      "../../../sensitive.jpg",
-      "//evil.com/tracker.gif",
-      "https://evil.com@trusted.com/image.jpg",
-      "https://trusted.com.evil.com/image.jpg",
-      "\x00javascript:void(0)",
-    ];
-
-    testBlockedUrls(
-      "image",
-      badImageUrls,
-      ["https://trusted.com/"],
-      "https://example.com"
-    );
-  });
-
-  describe("Edge cases with malformed URLs", () => {
-    it("handles null href gracefully", () => {
-      render(
-        <HardenedReactMarkdown defaultOrigin="https://example.com">
-          {"[Test]()"}
-        </HardenedReactMarkdown>
-      );
-      expect(screen.getByText("Test [blocked]")).toBeInTheDocument();
-    });
-
-    it("handles undefined src gracefully", () => {
-      render(
-        <HardenedReactMarkdown defaultOrigin="https://example.com">
-          {"![Test]()"}
-        </HardenedReactMarkdown>
-      );
-      expect(screen.getByText("[Image blocked: Test]")).toBeInTheDocument();
-    });
-
-    it("handles numeric URL inputs", () => {
-      const markdown = "[Test](123)"; // Number as URL becomes relative path
-      render(
-        <HardenedReactMarkdown
-          defaultOrigin="https://example.com"
-          allowedLinkPrefixes={["https://example.com/"]}
-        >
-          {markdown}
-        </HardenedReactMarkdown>
-      );
-      // Numeric URLs resolve to relative paths like /123 which become https://example.com/123
-      const link = screen.getByRole("link");
-      expect(link).toHaveAttribute("href", "https://example.com/123");
-    });
-
-    it("handles URLs with unicode characters", () => {
-      render(
-        <HardenedReactMarkdown
-          defaultOrigin="https://example.com"
-          allowedLinkPrefixes={["https://example.com/"]}
-        >
-          {"[Test](https://example.com/路径/文件)"}
-        </HardenedReactMarkdown>
-      );
-
-      const link = screen.getByRole("link");
-      expect(link).toHaveAttribute(
-        "href",
-        "https://example.com/%E8%B7%AF%E5%BE%84/%E6%96%87%E4%BB%B6"
-      );
-    });
-
-    it("handles extremely long URLs", () => {
-      const longPath = "a".repeat(10000);
-      const markdown = `[Test](https://example.com/${longPath})`;
-
-      render(
-        <HardenedReactMarkdown
-          defaultOrigin="https://example.com"
-          allowedLinkPrefixes={["https://example.com/"]}
-        >
-          {markdown}
-        </HardenedReactMarkdown>
-      );
-
-      const link = screen.getByRole("link");
-      expect(link).toHaveAttribute("href", `https://example.com/${longPath}`);
-    });
-  });
-  describe("Basic markdown rendering", () => {
-    it("renders headings correctly", () => {
-      render(
-        <HardenedReactMarkdown>
-          {"# Heading 1\n## Heading 2"}
-        </HardenedReactMarkdown>
-      );
-
-      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-        "Heading 1"
-      );
-      expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(
-        "Heading 2"
-      );
-    });
-
-    it("renders paragraphs and text formatting", () => {
-      render(
-        <HardenedReactMarkdown>
-          {"This is **bold** and this is *italic*"}
-        </HardenedReactMarkdown>
-      );
-
-      expect(screen.getByText("bold")).toBeInTheDocument();
-      expect(screen.getByText("italic")).toBeInTheDocument();
-    });
-
-    it("renders lists correctly", () => {
-      const markdown = `
-- Item 1
-- Item 2
-
-1. First
-2. Second
-      `;
-
-      render(<HardenedReactMarkdown>{markdown}</HardenedReactMarkdown>);
-
-      expect(screen.getByText("Item 1")).toBeInTheDocument();
-      expect(screen.getByText("Item 2")).toBeInTheDocument();
-      expect(screen.getByText("First")).toBeInTheDocument();
-      expect(screen.getByText("Second")).toBeInTheDocument();
-    });
-
-    it("renders code blocks", () => {
-      const { container } = render(
-        <HardenedReactMarkdown>
-          {`\`inline code\`
-
-\`\`\`
-block code
-\`\`\``}
-        </HardenedReactMarkdown>
-      );
-
-      expect(screen.getByText("inline code")).toBeInTheDocument();
-      // For code blocks, check the pre element exists
-      const preElement = container.querySelector("pre");
-      expect(preElement).toBeInTheDocument();
-      expect(preElement?.textContent).toContain("block code");
-    });
-  });
-
-  describe("Security properties - Links", () => {
-    it("blocks all links when no prefixes are allowed", () => {
-      const markdown = "[GitHub](https://github.com)";
-      render(<HardenedReactMarkdown>{markdown}</HardenedReactMarkdown>);
-
-      expect(screen.queryByRole("link")).not.toBeInTheDocument();
-      expect(screen.getByText("GitHub [blocked]")).toBeInTheDocument();
-    });
-
-    it("allows links with allowed prefixes", () => {
-      const markdown = "[GitHub](https://github.com/user/repo)";
-      render(
-        <HardenedReactMarkdown
-          defaultOrigin="https://example.com"
-          allowedLinkPrefixes={["https://github.com/"]}
-        >
-          {markdown}
-        </HardenedReactMarkdown>
-      );
-
-      const link = screen.getByRole("link");
-      expect(link).toHaveAttribute("href", "https://github.com/user/repo");
-      expect(link).toHaveAttribute("target", "_blank");
-      expect(link).toHaveAttribute("rel", "noopener noreferrer");
-    });
-
-    it("blocks links that do not match allowed prefixes", () => {
-      const markdown = `
-[Allowed](https://github.com/repo)
-[Blocked](https://evil.com/malware)
-      `;
-
-      render(
-        <HardenedReactMarkdown
-          defaultOrigin="https://example.com"
-          allowedLinkPrefixes={["https://github.com/"]}
-        >
-          {markdown}
-        </HardenedReactMarkdown>
-      );
-
-      expect(screen.getByRole("link")).toHaveTextContent("Allowed");
-      expect(screen.getByText("Blocked [blocked]")).toBeInTheDocument();
-    });
-
-    it("handles multiple allowed prefixes", () => {
-      const markdown = `
-[GitHub](https://github.com/repo)
-[Docs](https://docs.example.com/page)
-[Website](https://www.example.com)
-[Blocked](https://malicious.com)
-      `;
-
-      render(
-        <HardenedReactMarkdown
-          defaultOrigin="https://example.com"
-          allowedLinkPrefixes={[
-            "https://github.com/",
-            "https://docs.",
-            "https://www.",
-          ]}
-        >
-          {markdown}
-        </HardenedReactMarkdown>
-      );
-
-      const links = screen.getAllByRole("link");
-      expect(links).toHaveLength(3);
-      expect(screen.getByText("Blocked [blocked]")).toBeInTheDocument();
-    });
-  });
-
-  describe("Security properties - Images", () => {
-    it("blocks all images when no prefixes are allowed", () => {
-      const markdown = "![Alt text](https://example.com/image.jpg)";
-      render(<HardenedReactMarkdown>{markdown}</HardenedReactMarkdown>);
-
-      expect(screen.queryByRole("img")).not.toBeInTheDocument();
-      expect(screen.getByText("[Image blocked: Alt text]")).toBeInTheDocument();
-    });
-
-    it("allows images with allowed prefixes", () => {
-      const markdown = "![Placeholder](https://via.placeholder.com/150)";
-      render(
-        <HardenedReactMarkdown
-          defaultOrigin="https://example.com"
-          allowedImagePrefixes={["https://via.placeholder.com/"]}
-        >
-          {markdown}
-        </HardenedReactMarkdown>
-      );
-
-      const img = screen.getByRole("img");
-      expect(img).toHaveAttribute("src", "https://via.placeholder.com/150");
-      expect(img).toHaveAttribute("alt", "Placeholder");
-    });
-
-    it("blocks images that do not match allowed prefixes", () => {
-      const markdown = `
-![Allowed](https://via.placeholder.com/150)
-![Blocked](https://evil.com/malware.jpg)
-      `;
-
-      render(
-        <HardenedReactMarkdown
-          defaultOrigin="https://example.com"
-          allowedImagePrefixes={["https://via.placeholder.com/"]}
-        >
-          {markdown}
-        </HardenedReactMarkdown>
-      );
-
-      expect(screen.getByRole("img")).toHaveAttribute("alt", "Allowed");
-      expect(screen.getByText("[Image blocked: Blocked]")).toBeInTheDocument();
-    });
-
-    it("handles images without alt text", () => {
-      const markdown = "![](https://example.com/image.jpg)";
-      render(<HardenedReactMarkdown>{markdown}</HardenedReactMarkdown>);
-
-      expect(
-        screen.getByText("[Image blocked: No description]")
-      ).toBeInTheDocument();
-    });
-
-    it("allows local images with correct origin", () => {
-      const markdown = "![Logo](/logo.png)";
-      render(
-        <HardenedReactMarkdown
-          defaultOrigin="https://example.com"
-          allowedImagePrefixes={["https://example.com/"]}
-        >
-          {markdown}
-        </HardenedReactMarkdown>
-      );
-
-      const img = screen.getByRole("img");
-      expect(img).toHaveAttribute("src", "/logo.png");
-    });
-
-    it("transforms relative image URLs correctly", () => {
-      const markdown = "![Image](/images/test.jpg?v=1#section)";
-      render(
-        <HardenedReactMarkdown
-          defaultOrigin="https://trusted.com"
-          allowedImagePrefixes={["https://trusted.com/"]}
-        >
-          {markdown}
-        </HardenedReactMarkdown>
-      );
-
-      const img = screen.getByRole("img");
-      expect(img).toHaveAttribute("src", "/images/test.jpg?v=1#section");
-    });
-  });
-
-  describe("ReactMarkdown prop compatibility", () => {
-    it("accepts standard ReactMarkdown props", () => {
-      // Test that it accepts props without error
-      const { container } = render(
-        <HardenedReactMarkdown skipHtml={true} unwrapDisallowed={true}>
-          {"# Test with <span>HTML</span>"}
-        </HardenedReactMarkdown>
-      );
-
-      expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
-      // HTML should be skipped
-      expect(container.textContent).not.toContain("<span>");
-    });
-
-    it("accepts and uses custom components", () => {
-      const customComponents = {
-        h1: ({ children }: any) => <h1 data-testid="custom-h1">{children}</h1>,
-      };
-
-      render(
-        <HardenedReactMarkdown components={customComponents}>
-          {"# Custom Heading"}
-        </HardenedReactMarkdown>
-      );
-
-      expect(screen.getByTestId("custom-h1")).toHaveTextContent(
-        "Custom Heading"
-      );
-    });
-
-    it("hardened components override user components for security", () => {
-      const customComponents = {
-        a: ({ children }: any) => <a data-testid="custom-link">{children}</a>,
-      };
-
-      render(
-        <HardenedReactMarkdown components={customComponents}>
-          {"[Link](https://example.com)"}
-        </HardenedReactMarkdown>
-      );
-
-      // Should use hardened component, not custom one
-      expect(screen.queryByTestId("custom-link")).not.toBeInTheDocument();
-      expect(screen.getByText("Link [blocked]")).toBeInTheDocument();
-    });
-
-    it("accepts remarkPlugins and rehypePlugins", () => {
-      // This just tests that the props are accepted without error
-      render(
-        <HardenedReactMarkdown remarkPlugins={[]} rehypePlugins={[]}>
-          {"# Test"}
-        </HardenedReactMarkdown>
-      );
-
-      expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-        "Test"
-      );
-    });
-  });
-
-  describe("Edge cases", () => {
-    it("handles undefined href in links", () => {
-      render(<HardenedReactMarkdown>{"[No href]()"}</HardenedReactMarkdown>);
-      expect(screen.getByText("No href [blocked]")).toBeInTheDocument();
-    });
-
-    it("handles undefined src in images", () => {
-      render(<HardenedReactMarkdown>{"![No src]()"}</HardenedReactMarkdown>);
-      expect(screen.getByText("[Image blocked: No src]")).toBeInTheDocument();
-    });
-
-    it("handles complex markdown with mixed allowed/blocked content", () => {
-      const markdown = `
-# My Document
-
-This has [allowed link](https://github.com/repo) and [blocked link](https://bad.com).
-
-![Allowed image](https://via.placeholder.com/100)
-![Blocked image](https://external.com/img.jpg)
-
-> Quote with [another link](https://docs.github.com)
-      `;
-
-      render(
-        <HardenedReactMarkdown
-          defaultOrigin="https://example.com"
-          allowedLinkPrefixes={["https://github.com/", "https://docs."]}
-          allowedImagePrefixes={["https://via.placeholder.com/"]}
-        >
-          {markdown}
-        </HardenedReactMarkdown>
-      );
-
-      // Check allowed content
-      expect(screen.getAllByRole("link")).toHaveLength(2);
-      expect(screen.getByRole("img")).toHaveAttribute("alt", "Allowed image");
-
-      // Check blocked content
-      expect(screen.getByText("blocked link [blocked]")).toBeInTheDocument();
-      expect(
-        screen.getByText("[Image blocked: Blocked image]")
-      ).toBeInTheDocument();
-    });
-  });
-
-  describe("Image transformation with relative URLs", () => {
-    it("preserves query params and hash in relative image URLs", () => {
-      const markdown = "![Test](/img.jpg?size=large&v=2#section)";
-      render(
-        <HardenedReactMarkdown
-          defaultOrigin="https://trusted.com"
-          allowedImagePrefixes={["https://trusted.com/"]}
-        >
-          {markdown}
-        </HardenedReactMarkdown>
-      );
-
-      const img = screen.getByRole("img");
-      expect(img).toHaveAttribute("src", "/img.jpg?size=large&v=2#section");
-    });
-
-    it("blocks relative images when origin not allowed", () => {
-      const markdown = "![Test](/evil.jpg)";
-      render(
-        <HardenedReactMarkdown
-          defaultOrigin="https://untrusted.com"
-          allowedImagePrefixes={["https://trusted.com/"]}
-        >
-          {markdown}
-        </HardenedReactMarkdown>
-      );
-
-      expect(screen.queryByRole("img")).not.toBeInTheDocument();
-      expect(screen.getByText("[Image blocked: Test]")).toBeInTheDocument();
-    });
-  });
-
-  describe("Specific bypass attempts", () => {
-    it("correctly handles URLs that appear to bypass but actually resolve correctly", () => {
-      // This URL resolves to https://trusted.com/evil.com/image.jpg which should be allowed
-      render(
-        <HardenedReactMarkdown
-          defaultOrigin="https://example.com"
-          allowedImagePrefixes={["https://trusted.com/"]}
-        >
-          {"![Test](https://trusted.com/../../../evil.com/image.jpg)"}
-        </HardenedReactMarkdown>
-      );
-
-      const img = screen.getByRole("img");
-      expect(img).toHaveAttribute(
-        "src",
-        "https://trusted.com/evil.com/image.jpg"
-      );
-    });
-
-    it("handles malformed URLs that contain invalid characters", () => {
-      const malformedUrls = [
-        "[Test](javascript:alert)",
-        "[Test](data:text)",
-        "[Test](vbscript:)",
-      ];
-
-      malformedUrls.forEach((markdown) => {
-        const { unmount } = render(
-          <HardenedReactMarkdown defaultOrigin="https://example.com">
-            {markdown}
-          </HardenedReactMarkdown>
-        );
-
-        // These should be blocked
-        expect(screen.queryByRole("link")).not.toBeInTheDocument();
-        unmount();
-      });
-    });
-  });
-});
+    },
+  };
+
+  const mergedComponents = {
+    ...userComponents,
+    ...hardenedComponents,
+  };
+
+  return (
+    <ReactMarkdown components={mergedComponents} {...reactMarkdownProps} />
+  );
+}
