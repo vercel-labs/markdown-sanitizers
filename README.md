@@ -3,6 +3,9 @@
 A wrapper for [react-markdown](https://www.npmjs.com/package/react-markdown) that ensures that untrusted
 markdown does not contain images from and links to unexpected origins.
 
+This is particularly important for markdown returned from LLMs which might have been subject to prompt
+injection.
+
 ## Features
 
 - 🔒 **URL Filtering**: Blocks links and images that don't match allowed URL prefixes
@@ -75,15 +78,17 @@ A new component with enhanced security that accepts all original props plus:
 
 - Array of URL prefixes that are allowed for links
 - Links not matching these prefixes will be blocked and shown as `[blocked]`
+- Use `"*"` to allow all URLs (disables filtering)
 - Default: `[]` (blocks all links)
-- Example: `['https://github.com/', 'https://docs.']`
+- Example: `['https://github.com/', 'https://docs.']` or `['*']`
 
 #### `allowedImagePrefixes?: string[]`
 
 - Array of URL prefixes that are allowed for images
 - Images not matching these prefixes will be blocked and shown as placeholders
+- Use `"*"` to allow all URLs (disables filtering)
 - Default: `[]` (blocks all images)
-- Example: `['https://via.placeholder.com/', '/']`
+- Example: `['https://via.placeholder.com/', '/']` or `['*']`
 
 All other props are passed through to the wrapped markdown component.
 
@@ -133,6 +138,22 @@ const HardenedMarkdown = hardenReactMarkdown(ReactMarkdown);
 </HardenedMarkdown>
 ```
 
+### Allow All URLs (Wildcard)
+
+```tsx
+<HardenedMarkdown
+  allowedLinkPrefixes={["*"]}
+  allowedImagePrefixes={["*"]}
+>
+  {`
+  [Any Link](https://anywhere.com/link)
+  ![Any Image](https://untrusted-site.com/image.jpg)
+  `}
+</HardenedMarkdown>
+```
+
+**Note**: Using `"*"` disables URL filtering entirely. Only use this when you trust the markdown source.
+
 ### Custom Components
 
 ```tsx
@@ -160,6 +181,7 @@ const HardenedCustomMarkdown = hardenReactMarkdown(CustomMarkdown);
 - **Images**: Filters `src` attributes in `<img>` elements
 - **Relative URLs**: Properly resolves and validates relative URLs against `defaultOrigin`
 - **Path Traversal Protection**: Normalizes URLs to prevent `../` attacks
+- **Wildcard Support**: Use `"*"` prefix to disable filtering (only when markdown is trusted)
 
 ### Blocked Content Handling
 

@@ -850,4 +850,155 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
       );
     });
   });
+
+  describe("Wildcard prefix support", () => {
+    it("allows all links when allowedLinkPrefixes includes '*'", () => {
+      const testUrls = [
+        { input: "https://example.com/test", expected: "https://example.com/test" },
+        { input: "https://malicious-site.com/tracker", expected: "https://malicious-site.com/tracker" },
+        { input: "http://insecure-site.com", expected: "http://insecure-site.com/" },
+        { input: "https://any-domain.org/path", expected: "https://any-domain.org/path" },
+      ];
+
+      testUrls.forEach(({ input, expected }) => {
+        const { unmount } = render(
+          <HardenedReactMarkdown
+            defaultOrigin="https://example.com"
+            allowedLinkPrefixes={["*"]}
+          >
+            {`[Test Link](${input})`}
+          </HardenedReactMarkdown>
+        );
+
+        const link = screen.getByRole("link");
+        expect(link).toHaveAttribute("href", expected);
+        expect(link).toHaveTextContent("Test Link");
+        unmount();
+      });
+    });
+
+    it("allows all images when allowedImagePrefixes includes '*'", () => {
+      const testUrls = [
+        "https://example.com/image.png",
+        "https://untrusted-site.com/tracker.gif",
+        "http://insecure-images.com/photo.jpg",
+        "https://any-cdn.net/asset.svg",
+      ];
+
+      testUrls.forEach((url) => {
+        const { unmount } = render(
+          <HardenedReactMarkdown
+            defaultOrigin="https://example.com"
+            allowedImagePrefixes={["*"]}
+          >
+            {`![Test Image](${url})`}
+          </HardenedReactMarkdown>
+        );
+
+        const img = screen.getByRole("img");
+        expect(img).toHaveAttribute("src", url);
+        expect(img).toHaveAttribute("alt", "Test Image");
+        unmount();
+      });
+    });
+
+    it("handles relative URLs with wildcard prefix", () => {
+      const { unmount: unmount1 } = render(
+        <HardenedReactMarkdown
+          defaultOrigin="https://example.com"
+          allowedLinkPrefixes={["*"]}
+        >
+          {"[Relative Link](/internal-page)"}
+        </HardenedReactMarkdown>
+      );
+
+      expect(screen.getByRole("link")).toHaveAttribute("href", "/internal-page");
+      unmount1();
+
+      const { unmount: unmount2 } = render(
+        <HardenedReactMarkdown
+          defaultOrigin="https://example.com"
+          allowedImagePrefixes={["*"]}
+        >
+          {"![Relative Image](/images/logo.png)"}
+        </HardenedReactMarkdown>
+      );
+
+      expect(screen.getByRole("img")).toHaveAttribute("src", "/images/logo.png");
+      unmount2();
+    });
+
+    it("wildcard works alongside other prefixes", () => {
+      render(
+        <HardenedReactMarkdown
+          defaultOrigin="https://example.com"
+          allowedLinkPrefixes={["https://github.com/", "*"]}
+        >
+          {"[Any Link](https://random-site.com/path)"}
+        </HardenedReactMarkdown>
+      );
+
+      expect(screen.getByRole("link")).toHaveAttribute(
+        "href",
+        "https://random-site.com/path"
+      );
+    });
+
+    it("wildcard allows malformed URLs that can still be parsed", () => {
+      render(
+        <HardenedReactMarkdown
+          defaultOrigin="https://example.com"
+          allowedLinkPrefixes={["*"]}
+        >
+          {"[Test](//example.com/protocol-relative)"}
+        </HardenedReactMarkdown>
+      );
+
+      expect(screen.getByRole("link")).toHaveAttribute(
+        "href",
+        "/protocol-relative"
+      );
+    });
+
+    it("wildcard allows URLs that can be resolved with defaultOrigin", () => {
+      render(
+        <HardenedReactMarkdown
+          defaultOrigin="https://example.com"
+          allowedLinkPrefixes={["*"]}
+        >
+          {"[Test](invalid-url-without-protocol)"}
+        </HardenedReactMarkdown>
+      );
+
+      // With defaultOrigin, this gets resolved to an absolute URL
+      expect(screen.getByRole("link")).toHaveAttribute(
+        "href",
+        "https://example.com/invalid-url-without-protocol"
+      );
+    });
+
+    it("wildcard doesn't require defaultOrigin for absolute URLs", () => {
+      render(
+        <HardenedReactMarkdown allowedLinkPrefixes={["*"]}>
+          {"[Test](https://example.com/test)"}
+        </HardenedReactMarkdown>
+      );
+
+      expect(screen.getByRole("link")).toHaveAttribute(
+        "href",
+        "https://example.com/test"
+      );
+    });
+
+    it("wildcard still blocks completely unparseable URLs", () => {
+      render(
+        <HardenedReactMarkdown allowedLinkPrefixes={["*"]}>
+          {"[Test](ht@tp://not-a-valid-url)"}
+        </HardenedReactMarkdown>
+      );
+
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
+      expect(screen.getByText("Test [blocked]")).toBeInTheDocument();
+    });
+  });
 });

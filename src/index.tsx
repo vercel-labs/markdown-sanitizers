@@ -41,9 +41,13 @@ export default function hardenReactMarkdown<
       components: userComponents,
       ...reactMarkdownProps
     } = props;
+    // Only require defaultOrigin if we have specific prefixes (not wildcard only)
+    const hasSpecificLinkPrefixes = allowedLinkPrefixes.length && !allowedLinkPrefixes.every(p => p === "*");
+    const hasSpecificImagePrefixes = allowedImagePrefixes.length && !allowedImagePrefixes.every(p => p === "*");
+    
     if (
       !defaultOrigin &&
-      (allowedLinkPrefixes.length || allowedImagePrefixes.length)
+      (hasSpecificLinkPrefixes || hasSpecificImagePrefixes)
     ) {
       throw new Error(
         "defaultOrigin is required when allowedLinkPrefixes or allowedImagePrefixes are provided"
@@ -53,9 +57,19 @@ export default function hardenReactMarkdown<
     const parseUrl = (url: unknown): URL | null => {
       if (typeof url !== "string") return null;
       try {
-        const urlObject = new URL(url, defaultOrigin);
+        // Try to parse as absolute URL first
+        const urlObject = new URL(url);
         return urlObject;
       } catch (error) {
+        // If that fails and we have a defaultOrigin, try with it
+        if (defaultOrigin) {
+          try {
+            const urlObject = new URL(url, defaultOrigin);
+            return urlObject;
+          } catch (error) {
+            return null;
+          }
+        }
         return null;
       }
     };
@@ -70,6 +84,20 @@ export default function hardenReactMarkdown<
       allowedPrefixes: string[]
     ): string | null => {
       if (!url) return null;
+      
+      // Check for wildcard - allow all URLs
+      if (allowedPrefixes.includes("*")) {
+        const inputWasRelative = isPathRelativeUrl(url);
+        const urlString = parseUrl(url);
+        if (urlString) {
+          if (inputWasRelative) {
+            return urlString.pathname + urlString.search + urlString.hash;
+          }
+          return urlString.href;
+        }
+        return null;
+      }
+      
       // If the input is path relative, we output a path relative URL as well,
       // however, we always run the same checks on an absolute URL and we
       // always rescronstruct the output from the parsed URL to ensure that
