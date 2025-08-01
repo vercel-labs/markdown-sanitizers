@@ -3,8 +3,8 @@
 A wrapper for [react-markdown](https://www.npmjs.com/package/react-markdown) that ensures that untrusted
 markdown does not contain images from and links to unexpected origins.
 
-This is particularly important for markdown returned from LLMs which might have been subject to prompt
-injection.
+This is particularly important for markdown returned from [LLMs in AI agents which might have been subject to prompt
+injection](https://vercel.com/blog/building-secure-ai-agents).
 
 ## Features
 
@@ -141,10 +141,7 @@ const HardenedMarkdown = hardenReactMarkdown(ReactMarkdown);
 ### Allow All URLs (Wildcard)
 
 ```tsx
-<HardenedMarkdown
-  allowedLinkPrefixes={["*"]}
-  allowedImagePrefixes={["*"]}
->
+<HardenedMarkdown allowedLinkPrefixes={["*"]} allowedImagePrefixes={["*"]}>
   {`
   [Any Link](https://anywhere.com/link)
   ![Any Image](https://untrusted-site.com/image.jpg)
