@@ -1,0 +1,219 @@
+import { describe, expect, test } from "vitest";
+import { MarkdownSanitizer } from "../src/index";
+
+describe("HTML Sanitization", () => {
+  const createSanitizer = (options = {}) =>
+    new MarkdownSanitizer({
+      defaultOrigin: "https://example.com",
+      allowedLinkPrefixes: ["https://example.com", "https://trusted.org"],
+      allowedImagePrefixes: ["https://example.com", "https://images.com"],
+      ...options,
+    });
+
+  const sanitize = (input: string, options = {}) => {
+    return createSanitizer(options).sanitize(input);
+  };
+
+  describe("Safe HTML Tags", () => {
+    test("preserves safe HTML tags", () => {
+      const input = "Text with <strong>bold</strong> and <em>italic</em>";
+      const result = sanitize(input);
+      expect(result).toBe(
+        "Text with <strong>bold</strong> and <em>italic</em>\n"
+      );
+    });
+
+    test("preserves code tags", () => {
+      const input = "Here is <code>inline code</code>";
+      const result = sanitize(input);
+      expect(result).toBe("Here is <code>inline code</code>\n");
+    });
+
+    test("preserves links with href sanitization", () => {
+      const input = '<a href="https://example.com/page">Safe link</a>';
+      const result = sanitize(input);
+      expect(result).toBe('<a href="https://example.com/page">Safe link</a>\n');
+    });
+
+    test("sanitizes links with untrusted hrefs", () => {
+      const input = '<a href="https://evil.com/malware">Dangerous link</a>';
+      const result = sanitize(input);
+      expect(result).toBe("<a>Dangerous link</a>\n");
+    });
+
+    test("preserves images with src sanitization", () => {
+      const input = '<img src="https://images.com/safe.jpg" alt="Safe image">';
+      const result = sanitize(input);
+      expect(result).toBe(
+        '<img src="https://images.com/safe.jpg" alt="Safe image">\n'
+      );
+    });
+
+    test("sanitizes images with untrusted src", () => {
+      const input = '<img src="https://evil.com/tracker.gif" alt="Tracker">';
+      const result = sanitize(input);
+      expect(result).toBe("\n");
+    });
+  });
+
+  describe("Dangerous HTML Tags", () => {
+    test("removes script tags completely", () => {
+      const input = 'Safe text <script>alert("xss")</script> more text';
+      const result = sanitize(input);
+      expect(result).toBe("Safe text  more text\n");
+    });
+
+    test("removes iframe tags", () => {
+      const input = '<iframe src="https://evil.com/embed"></iframe>';
+      const result = sanitize(input);
+      expect(result).toBe("\n");
+    });
+
+    test("removes object and embed tags", () => {
+      const input =
+        '<object data="malware.swf"></object><embed src="evil.exe">';
+      const result = sanitize(input);
+      expect(result).toBe("\n");
+    });
+
+    test("removes form elements", () => {
+      const input = '<form><input type="text"><button>Submit</button></form>';
+      const result = sanitize(input);
+      expect(result).toBe("Submit\n");
+    });
+
+    test("removes style tags", () => {
+      const input = "<style>body { background: red; }</style>";
+      const result = sanitize(input);
+      expect(result).toBe("");
+    });
+  });
+
+  describe("XSS Prevention", () => {
+    test("removes javascript: URLs in links", () => {
+      const input = "<a href=\"javascript:alert('xss')\">Click me</a>";
+      const result = sanitize(input);
+      expect(result).toBe("<a>Click me</a>\n");
+    });
+
+    test("removes javascript: URLs in images", () => {
+      const input = '<img src="javascript:alert(\'xss\')" alt="Evil">';
+      const result = sanitize(input);
+      expect(result).toBe('<img alt="Evil">\n');
+    });
+
+    test("removes data: URLs in images", () => {
+      const input =
+        '<img src="data:text/html,<script>alert(\'xss\')</script>" alt="Data URL attack">';
+      const result = sanitize(input);
+      expect(result).toBe("\n");
+    });
+
+    test("removes vbscript: URLs", () => {
+      const input = "<a href=\"vbscript:msgbox('xss')\">VBScript attack</a>";
+      const result = sanitize(input);
+      expect(result).toBe("<a>VBScript attack</a>\n");
+    });
+
+    test("removes onload and other event handlers", () => {
+      const input =
+        '<img src="https://images.com/safe.jpg" onload="alert(\'xss\')" alt="Evil image">';
+      const result = sanitize(input);
+      expect(result).toBe(
+        '<img src="https://images.com/safe.jpg" alt="Evil image">\n'
+      );
+    });
+
+    test("removes onerror handlers", () => {
+      const input =
+        '<img src="nonexistent.jpg" onerror="alert(\'xss\')" alt="Error handler attack">';
+      const result = sanitize(input);
+      expect(result).toBe(
+        '<img src="https://example.com/nonexistent.jpg" alt="Error handler attack">\n'
+      );
+    });
+
+    test("removes onclick handlers", () => {
+      const input = "<div onclick=\"alert('xss')\">Click me</div>";
+      const result = sanitize(input);
+      expect(result).toBe("<div>Click me</div>\n");
+    });
+  });
+
+  describe("HTML Attribute Sanitization", () => {
+    test("preserves safe attributes", () => {
+      const input =
+        '<img src="https://images.com/photo.jpg" alt="Photo" width="100" height="50">';
+      const result = sanitize(input);
+      expect(result).toBe(
+        '<img src="https://images.com/photo.jpg" alt="Photo" width="100" height="50">\n'
+      );
+    });
+
+    test("removes dangerous attributes", () => {
+      const input =
+        '<div style="background: url(javascript:alert(\'xss\'))" class="safe">Content</div>';
+      const result = sanitize(input);
+      expect(result).toBe('<div class="safe">Content</div>\n');
+    });
+
+    test("sanitizes href attributes in anchor tags", () => {
+      const input =
+        '<a href="https://evil.com/malware" title="Safe title">Link</a>';
+      const result = sanitize(input);
+      expect(result).toBe('<a title="Safe title">Link</a>\n');
+    });
+  });
+
+  describe("Complex HTML Structures", () => {
+    test("handles nested HTML tags", () => {
+      const input =
+        "<div><p>Paragraph with <strong>bold <em>and italic</em></strong> text</p></div>";
+      const result = sanitize(input);
+      expect(result).toBe(
+        "<div><p>Paragraph with <strong>bold <em>and italic</em></strong> text</p></div>\n"
+      );
+    });
+
+    test("handles HTML tables", () => {
+      const input = `<table>
+        <thead>
+          <tr><th>Header</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Data</td></tr>
+        </tbody>
+      </table>`;
+      const result = sanitize(input);
+      expect(result).toBe(
+        "<table>\n        <thead>\n          <tr><th>Header</th></tr>\n        </thead>\n        <tbody>\n          <tr><td>Data</td></tr>\n        </tbody>\n      </table>\n"
+      );
+    });
+
+    test("handles HTML lists", () => {
+      const input = "<ul><li>Item 1</li><li>Item 2</li></ul>";
+      const result = sanitize(input);
+      expect(result).toBe("<ul><li>Item 1</li><li>Item 2</li></ul>\n");
+    });
+  });
+
+  describe("Malformed HTML", () => {
+    test("handles unclosed tags", () => {
+      const input = "<div><p>Unclosed paragraph<strong>Bold text</div>";
+      const result = sanitize(input);
+      expect(result).toBeTruthy(); // Should not crash
+    });
+
+    test("handles mismatched tags", () => {
+      const input = "<strong><em>Text</strong></em>";
+      const result = sanitize(input);
+      expect(result).toBeTruthy(); // Should not crash
+    });
+
+    test("handles HTML comments", () => {
+      const input = "<!-- This is a comment --><p>Visible text</p>";
+      const result = sanitize(input);
+      expect(result).toBe("<p>Visible text</p>\n");
+    });
+  });
+});
