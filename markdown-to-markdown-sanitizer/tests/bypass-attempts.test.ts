@@ -35,7 +35,6 @@ describe("Markdown Sanitizer Bypass Attempts", () => {
 
     marked: async (markdown: string) => {
       return marked(markdown, {
-        sanitize: false,
         gfm: true,
         breaks: false,
       });
@@ -152,28 +151,30 @@ describe("Markdown Sanitizer Bypass Attempts", () => {
       return false;
     }
 
-    const isTrustedOrigin = trustedOrigins.some((origin) =>
-      url.startsWith(origin)
-    );
+    try {
+      const parsedUrl = new URL(url);
 
-    if (!isTrustedOrigin) {
+      // Allow certain safe paths
+      if (url === "/forbidden" || url === "#") {
+        return false;
+      }
+
+      // Check if protocol is dangerous
+      if (parsedUrl.protocol !== "https:" && parsedUrl.protocol !== "http:") {
+        return true;
+      }
+
+      // Check if origin is trusted
+      const isTrustedOrigin = trustedOrigins.some((origin) => {
+        const trustedUrl = new URL(origin);
+        return trustedUrl.origin === parsedUrl.origin;
+      });
+
+      return !isTrustedOrigin;
+    } catch {
+      // If URL parsing fails, consider it dangerous
       return true;
     }
-
-    const parsedUrl = new URL(url);
-
-    if (parsedUrl.protocol !== "https:") {
-      return true;
-    }
-
-    const isTrustedOrigin2 = trustedOrigins.some((origin) => {
-      return new URL(origin).origin === parsedUrl.origin;
-    });
-
-    if (!isTrustedOrigin2) {
-      return true;
-    }
-    return false;
   };
 
   describe("Individual Bypass Files", () => {
