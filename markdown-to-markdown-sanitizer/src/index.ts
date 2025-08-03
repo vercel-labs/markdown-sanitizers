@@ -66,19 +66,6 @@ export class MarkdownSanitizer {
       return moreEscaped;
     };
 
-    // Add custom rule to prevent autolink generation to avoid embedding attacks
-    this.htmlToMarkdownProcessor.addRule('preventAutolinks', {
-      filter: (node) => {
-        return node.nodeName === 'A' && 
-               node.getAttribute('href') === node.textContent?.trim();
-      },
-      replacement: (content, node) => {
-        const href = node.getAttribute('href') || '';
-        // Always use explicit link syntax, never autolinks
-        return `[${content}](${href})`;
-      }
-    });
-
     // Add GFM plugin for tables and other GitHub Flavored Markdown features
     this.htmlToMarkdownProcessor.use(gfm);
 
@@ -96,6 +83,38 @@ export class MarkdownSanitizer {
     this.htmlSanitizer = new HtmlSanitizer(this.urlNormalizer);
   }
 
+  private decodeHtmlEntities(text: string): string {
+    return text
+      .replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec))
+      .replace(/&#x([a-f0-9]+);/gi, (match, hex) =>
+        String.fromCharCode(parseInt(hex, 16))
+      )
+      .replace(/&quot;/g, '"')
+      .replace(/&apos;/g, "'")
+      .replace(/&lt;/g, "<")
+      .replace(/&gt;/g, ">")
+      .replace(/&amp;/g, "&"); // Must be last
+  }
+
+  private normalizeAutolinks(markdown: string): string {
+    // Match autolinks and decode entities only within them
+    // Match any protocol scheme: letters, digits, +, -, . followed by ://
+    return markdown.replace(
+      /<([a-z][a-z0-9+.-]*:\/\/[^\s<>]+)>/gi,
+      (match, p1) => {
+        // Decode HTML entities only within the matched autolink URL
+        const decodedUrl = this.decodeHtmlEntities(p1);
+        if (decodedUrl != p1) {
+          return "";
+        }
+        return `[${this.urlNormalizer.sanitizeUrl(
+          decodedUrl,
+          "href"
+        )}](${this.urlNormalizer.sanitizeUrl(decodedUrl, "href")})`;
+      }
+    );
+  }
+
   sanitize(markdown: string): string {
     // DoS protection: limit input size
     if (markdown.length > 100000) {
@@ -104,6 +123,8 @@ export class MarkdownSanitizer {
     }
 
     try {
+      markdown = this.normalizeAutolinks(markdown);
+
       // Step 1: Parse markdown and convert to HTML using remark
       const html = String(this.markdownToHtmlProcessor.processSync(markdown));
 

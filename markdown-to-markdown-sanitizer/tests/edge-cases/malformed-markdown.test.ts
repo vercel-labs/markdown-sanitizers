@@ -7,7 +7,6 @@ describe("Malformed Markdown Edge Cases", () => {
       defaultOrigin: "https://example.com",
       allowedLinkPrefixes: ["https://example.com", "https://trusted.org"],
       allowedImagePrefixes: ["https://example.com", "https://images.com"],
-      html: { enabled: true },
       ...options,
     });
 
@@ -32,7 +31,7 @@ describe("Malformed Markdown Edge Cases", () => {
       const input = "[Link [with nested] brackets](https://example.com)";
       const result = sanitize(input);
       expect(result).toBe(
-        "[Link \\[with nested\\] brackets](https://example.com/)\n",
+        "[Link \\[with nested\\] brackets](https://example.com/)\n"
       );
     });
 
@@ -40,7 +39,7 @@ describe("Malformed Markdown Edge Cases", () => {
       const input = "[Link1](https://example.com[Link2](https://trusted.org)";
       const result = sanitize(input);
       expect(result).toBe(
-        "\\[Link1\\](https\\://example.com[Link2](https://trusted.org/)\n",
+        "\\[Link1\\](https\\://example.com[Link2](https://trusted.org/)\n"
       );
     });
 
@@ -62,7 +61,7 @@ describe("Malformed Markdown Edge Cases", () => {
       const input = "![Unclosed alt text(https://images.com/pic.jpg)";
       const result = sanitize(input);
       expect(result).toBe(
-        "!\\[Unclosed alt text(https\\://images.com/pic.jpg)\n",
+        "!\\[Unclosed alt text(https\\://images.com/pic.jpg)\n"
       );
     });
 
@@ -70,7 +69,7 @@ describe("Malformed Markdown Edge Cases", () => {
       const input = "![Alt [with nested] brackets](https://images.com/pic.jpg)";
       const result = sanitize(input);
       expect(result).toBe(
-        "![Alt with nested brackets](https://images.com/pic.jpg)\n",
+        "![Alt with nested brackets](https://images.com/pic.jpg)\n"
       );
     });
 
@@ -78,7 +77,7 @@ describe("Malformed Markdown Edge Cases", () => {
       const input = "!![Double exclamation](https://images.com/pic.jpg)";
       const result = sanitize(input);
       expect(result).toBe(
-        "!![Double exclamation](https://images.com/pic.jpg)\n",
+        "!![Double exclamation](https://images.com/pic.jpg)\n"
       );
     });
   });
@@ -94,23 +93,21 @@ describe("Malformed Markdown Edge Cases", () => {
       const input =
         "[ref]: https://example.com\n\nText without using the reference.";
       const result = sanitize(input);
-      expect(result).toBe(
-        "Text without using the reference.\n",
-      );
+      expect(result).toBe("Text without using the reference.\n");
     });
 
     test("malformed reference definition", () => {
       const input = "[ref] https://example.com\n[Text][ref]";
       const result = sanitize(input);
-      expect(result).toBe("\\[ref\\] https\\://example.com \\[Text\\]\\[ref\\]\n");
+      expect(result).toBe(
+        "\\[ref\\] https\\://example.com \\[Text\\]\\[ref\\]\n"
+      );
     });
 
     test("circular reference definitions", () => {
       const input = "[ref1]: [ref2]\n[ref2]: [ref1]\n[Link][ref1]";
       const result = sanitize(input);
-      expect(result).toBe(
-        "[Link](https://example.com/%5Bref2%5D)\n",
-      );
+      expect(result).toBe("[Link](https://example.com/%5Bref2%5D)\n");
     });
   });
 
@@ -120,21 +117,23 @@ describe("Malformed Markdown Edge Cases", () => {
         "<div>[Broken link](https://example.com and **unclosed bold</div>";
       const result = sanitize(input);
       expect(result).toBe(
-        "\\[Broken link\\](https\\://example.com and \\*\\*unclosed bold\n",
+        "\\[Broken link\\](https\\://example.com and \\*\\*unclosed bold\n"
       );
     });
 
     test("malformed HTML inside markdown", () => {
       const input = "[Link with <unclosed tag](https://example.com)";
       const result = sanitize(input);
-      expect(result).toBe("[Link with \\<\\unclosed tag](https://example.com/)\n");
+      expect(result).toBe(
+        "[Link with \\<\\unclosed tag](https://example.com/)\n"
+      );
     });
 
     test("overlapping malformed structures", () => {
       const input = "[Start <div>middle](https://example.com) end</div>";
       const result = sanitize(input);
       expect(result).toBe(
-        "[Start](https://example.com/)\n\n[middle](https://example.com/) end\n",
+        "[Start](https://example.com/)\n\n[middle](https://example.com/) end\n"
       );
     });
   });
@@ -143,9 +142,7 @@ describe("Malformed Markdown Edge Cases", () => {
     test("backslashes in various positions", () => {
       const input = "[Link\\text](https://example.com\\path) and \\[escaped\\]";
       const result = sanitize(input);
-      expect(result).toBe(
-        "[Link\\\\text](#) and \\[escaped\\]\n",
-      );
+      expect(result).toBe("[Link\\\\text](#) and \\[escaped\\]\n");
     });
 
     test("quotes in link text and URLs", () => {
@@ -153,7 +150,7 @@ describe("Malformed Markdown Edge Cases", () => {
         '[Link "with quotes"](https://example.com/path"with"quotes)';
       const result = sanitize(input);
       expect(result).toBe(
-        '[Link \\"with quotes\\"](https://example.com/path%22with%22quotes)\n',
+        '[Link \\"with quotes\\"](https://example.com/path%22with%22quotes)\n'
       );
     });
 
@@ -162,7 +159,7 @@ describe("Malformed Markdown Edge Cases", () => {
         "[Link <text>](https://example.com) and <https://example.com>";
       const result = sanitize(input);
       expect(result).toBe(
-        "[Link](https://example.com/) and [https\\://example.com](https://example.com/)\n",
+        "[Link](https://example.com/) and [https\\://example.com/](https://example.com/)\n"
       );
     });
 
@@ -170,7 +167,7 @@ describe("Malformed Markdown Edge Cases", () => {
       const input = "[Link #hash](https://example.com#fragment) ## Header";
       const result = sanitize(input);
       expect(result).toBe(
-        "[Link #hash](https://example.com/#fragment) ## Header\n",
+        "[Link #hash](https://example.com/#fragment) ## Header\n"
       );
     });
   });
@@ -221,14 +218,16 @@ describe("Malformed Markdown Edge Cases", () => {
         "[<div>broken](https://example.com</div> ![img](https://images.com **bold**";
       const result = sanitize(input);
       expect(result).toBe(
-        "\\[\n\nbroken\\](https\\://example.com\n\n!\\[img\\](https\\://images.com **bold**\n",
+        "\\[\n\nbroken\\](https\\://example.com\n\n!\\[img\\](https\\://images.com **bold**\n"
       );
     });
 
     test("random bracket and parenthesis combinations", () => {
       const input = ")](([Link text]())([](https://example.com))";
       const result = sanitize(input);
-      expect(result).toBe(")\\](([Link text](https://example.com/))([](https://example.com/))\n");
+      expect(result).toBe(
+        ")\\](([Link text](https://example.com/))([](https://example.com/))\n"
+      );
     });
 
     test("malformed markdown with control characters", () => {
