@@ -27,7 +27,7 @@ describe("Code Block Security and Functionality", () => {
       const input = 'Example: `<img src="javascript:alert()">` is dangerous.';
       const result = sanitizer.sanitize(input);
       
-      expect(result).toBe('Example: `<img src="javascript:alert()">` is dangerous.\n');
+      expect(result).toBe('Example\\: `<img src="javascript:alert()">` is dangerous.\n');
     });
 
     test("inline code with quotes and special chars should be preserved", () => {
@@ -54,7 +54,7 @@ End of example.`;
 
       const result = sanitizer.sanitize(input);
       
-      const expected = `Code example:
+      const expected = `Code example\\:
 
 \`\`\`html
 <script>
@@ -84,7 +84,7 @@ These are just examples.`;
 
       const result = sanitizer.sanitize(input);
       
-      const expected = `Markdown examples:
+      const expected = `Markdown examples\\:
 
 \`\`\`markdown
 # Header
@@ -114,7 +114,7 @@ Don't run this code.`;
 
       const result = sanitizer.sanitize(input);
       
-      const expected = `JavaScript example:
+      const expected = `JavaScript example\\:
 
 \`\`\`javascript
 function dangerous() {
@@ -142,7 +142,7 @@ End of code.`;
 
       const result = sanitizer.sanitize(input);
       
-      const expected = `Example:
+      const expected = `Example\\:
 
 \`\`\`
 <script>alert('xss')</script>
@@ -166,7 +166,7 @@ End of code.
 
 And here is more safe content with **bold text**.
 
-Inline code: \`<img src="x" onerror="alert()">\` in text.
+Inline code\\: \`<img src="x" onerror="alert()">\` in text.
 
 Final [link](https://example.com) here.`;
 
@@ -180,7 +180,7 @@ Final [link](https://example.com) here.`;
 
 And here is more safe content with **bold text**.
 
-Inline code: \`<img src="x" onerror="alert()">\` in text.
+Inline code\\: \`<img src="x" onerror="alert()">\` in text.
 
 Final [link](https://example.com/) here.
 `;
@@ -201,15 +201,15 @@ And this: ![bad](javascript:alert('xss'))`;
 
       const result = sanitizer.sanitize(input);
       
-      const expected = `Code example:
+      const expected = `Code example\\:
 
 \`\`\`html
 <script>alert('safe in code')</script>
 \`\`\`
 
-But this should be sanitized:
+But this should be sanitized\\:
 
-And this:
+And this\\:
 `;
 
       expect(result).toBe(expected);

@@ -55,7 +55,7 @@ describe("Security Attack Prevention", () => {
       expect(results[0]).toBe("Click\n");
 
       // Second attack gets escaped - the dangerous parts are removed
-      expect(results[1]).toBe("!\\[img\\](data:image/svg+xml,)\n");
+      expect(results[1]).toBe("!\\[img\\](data\\:image/svg+xml,)\n");
 
       // Third attack should be sanitized
       expect(results[2]).toBe("Click\n");

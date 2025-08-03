@@ -19,19 +19,19 @@ describe("Weird Parsing Edge Cases", () => {
     test("text that could be interpreted multiple ways", () => {
       const input = "Price: $[100] or *special* offer: 50% off!";
       const result = sanitize(input);
-      expect(result).toBe("Price: $\\[100\\] or *special* offer: 50% off!\n");
+      expect(result).toBe("Price\\: $\\[100\\] or *special* offer\\: 50% off!\n");
     });
 
     test("URL-like text that is not a link", () => {
       const input = "Visit https://example.com or call 555-1234";
       const result = sanitize(input);
-      expect(result).toBe("Visit https://example.com or call 555-1234\n");
+      expect(result).toBe("Visit https\\://example.com or call 555-1234\n");
     });
 
     test("emphasis markers in unexpected contexts", () => {
       const input = "Math: 2*3*4 = 24 and _constant_ = 42";
       const result = sanitize(input);
-      expect(result).toBe("Math: 2*3*4 \\= 24 and *constant* \\= 42\n");
+      expect(result).toBe("Math\\: 2*3*4 \\= 24 and *constant* \\= 42\n");
     });
 
     test("code-like text without backticks", () => {
@@ -120,7 +120,7 @@ describe("Weird Parsing Edge Cases", () => {
       const input = "Formula: f(x) = x*2 + [constant] where *x* > 0";
       const result = sanitize(input);
       expect(result).toBe(
-        "Formula: f(x) \\= x\\*2 + \\[constant\\] where *x* \\> 0\n",
+        "Formula\\: f(x) \\= x\\*2 + \\[constant\\] where *x* \\> 0\n",
       );
     });
 
@@ -134,7 +134,7 @@ describe("Weird Parsing Edge Cases", () => {
       const input = "Price: $100.50 or €75,00 with [link](https://example.com)";
       const result = sanitize(input);
       expect(result).toBe(
-        "Price: $100.50 or €75,00 with [link](https://example.com/)\n",
+        "Price\\: $100.50 or €75,00 with [link](https://example.com/)\n",
       );
     });
   });
@@ -151,7 +151,7 @@ describe("Weird Parsing Edge Cases", () => {
     test("regex patterns with markdown-like characters", () => {
       const input = "Pattern: /[a-z]*\\d+/ matches text";
       const result = sanitize(input);
-      expect(result).toBe("Pattern: /\\[a-z\\]\\*\\\\d+/ matches text\n");
+      expect(result).toBe("Pattern\\: /\\[a-z\\]\\*\\\\d+/ matches text\n");
     });
 
     test("file paths with brackets and special chars", () => {
@@ -159,7 +159,7 @@ describe("Weird Parsing Edge Cases", () => {
         "Path: /home/user/[config]/file.txt and C:\\\\Program Files\\\\App";
       const result = sanitize(input);
       expect(result).toBe(
-        "Path: /home/user/\\[config\\]/file.txt and C:\\\\Program Files\\\\App\n",
+        "Path\\: /home/user/\\[config\\]/file.txt and C\\:\\\\Program Files\\\\App\n",
       );
     });
   });
@@ -221,7 +221,7 @@ describe("Weird Parsing Edge Cases", () => {
         "Date: 2023-12-01 12:34:56 or [formatted](https://example.com)";
       const result = sanitize(input);
       expect(result).toBe(
-        "Date: 2023-12-01 12:34:56 or [formatted](https://example.com/)\n",
+        "Date\\: 2023-12-01 12\\:34\\:56 or [formatted](https://example.com/)\n",
       );
     });
 
@@ -239,7 +239,7 @@ describe("Weird Parsing Edge Cases", () => {
         "Location: 40.7128°N, 74.0060°W with [map](https://example.com)";
       const result = sanitize(input);
       expect(result).toBe(
-        "Location: 40.7128°N, 74.0060°W with [map](https://example.com/)\n",
+        "Location\\: 40.7128°N, 74.0060°W with [map](https://example.com/)\n",
       );
     });
   });
@@ -305,7 +305,7 @@ describe("Weird Parsing Edge Cases", () => {
         "API endpoint: GET /api/v1/users[?limit=10] - see [docs](https://example.com/api)";
       const result = sanitize(input);
       expect(result).toBe(
-        "API endpoint: GET /api/v1/users\\[?limit\\=10\\] - see [docs](https://example.com/api)\n",
+        "API endpoint\\: GET /api/v1/users\\[?limit\\=10\\] - see [docs](https://example.com/api)\n",
       );
     });
 
@@ -323,7 +323,7 @@ describe("Weird Parsing Edge Cases", () => {
         'Config: {key: "value"} or [JSON](https://example.com) **important** note!';
       const result = sanitize(input);
       expect(result).toBe(
-        'Config: {key: \\"value\\"} or [JSON](https://example.com/) **important** note!\n',
+        'Config\\: {key\\: \\"value\\"} or [JSON](https://example.com/) **important** note!\n',
       );
     });
   });

@@ -19,13 +19,13 @@ describe("Malformed Markdown Edge Cases", () => {
     test("unclosed link brackets", () => {
       const input = "[Unclosed link text(https://example.com)";
       const result = sanitize(input);
-      expect(result).toBe("\\[Unclosed link text(https://example.com)\n");
+      expect(result).toBe("\\[Unclosed link text(https\\://example.com)\n");
     });
 
     test("missing closing parenthesis in URL", () => {
       const input = "[Link text](https://example.com";
       const result = sanitize(input);
-      expect(result).toBe("\\[Link text\\](https://example.com\n");
+      expect(result).toBe("\\[Link text\\](https\\://example.com\n");
     });
 
     test("nested brackets in link text", () => {
@@ -40,14 +40,14 @@ describe("Malformed Markdown Edge Cases", () => {
       const input = "[Link1](https://example.com[Link2](https://trusted.org)";
       const result = sanitize(input);
       expect(result).toBe(
-        "\\[Link1\\](https://example.com[Link2](https://trusted.org/)\n",
+        "\\[Link1\\](https\\://example.com[Link2](https://trusted.org/)\n",
       );
     });
 
     test("link with unescaped parentheses in URL", () => {
       const input = "[Link](https://example.com/path(with)parens)";
       const result = sanitize(input);
-      expect(result).toBe("[Link](https://example.com/path\\(with\\)parens)\n");
+      expect(result).toBe("[Link](https://example.com/path%28with%29parens)\n");
     });
   });
 
@@ -62,7 +62,7 @@ describe("Malformed Markdown Edge Cases", () => {
       const input = "![Unclosed alt text(https://images.com/pic.jpg)";
       const result = sanitize(input);
       expect(result).toBe(
-        "!\\[Unclosed alt text(https://images.com/pic.jpg)\n",
+        "!\\[Unclosed alt text(https\\://images.com/pic.jpg)\n",
       );
     });
 
@@ -70,7 +70,7 @@ describe("Malformed Markdown Edge Cases", () => {
       const input = "![Alt [with nested] brackets](https://images.com/pic.jpg)";
       const result = sanitize(input);
       expect(result).toBe(
-        "![Alt [with nested] brackets](https://images.com/pic.jpg)\n",
+        "![Alt with nested brackets](https://images.com/pic.jpg)\n",
       );
     });
 
@@ -102,7 +102,7 @@ describe("Malformed Markdown Edge Cases", () => {
     test("malformed reference definition", () => {
       const input = "[ref] https://example.com\n[Text][ref]";
       const result = sanitize(input);
-      expect(result).toBe("\\[ref\\] https://example.com \\[Text\\]\\[ref\\]\n");
+      expect(result).toBe("\\[ref\\] https\\://example.com \\[Text\\]\\[ref\\]\n");
     });
 
     test("circular reference definitions", () => {
@@ -120,7 +120,7 @@ describe("Malformed Markdown Edge Cases", () => {
         "<div>[Broken link](https://example.com and **unclosed bold</div>";
       const result = sanitize(input);
       expect(result).toBe(
-        "\\[Broken link\\](https://example.com and \\*\\*unclosed bold\n",
+        "\\[Broken link\\](https\\://example.com and \\*\\*unclosed bold\n",
       );
     });
 
@@ -162,7 +162,7 @@ describe("Malformed Markdown Edge Cases", () => {
         "[Link <text>](https://example.com) and <https://example.com>";
       const result = sanitize(input);
       expect(result).toBe(
-        "[Link](https://example.com/) and [https://example.com](https://example.com/)\n",
+        "[Link](https://example.com/) and [https\\://example.com](https://example.com/)\n",
       );
     });
 
@@ -199,19 +199,19 @@ describe("Malformed Markdown Edge Cases", () => {
     test("malformed URLs with dangerous protocols", () => {
       const input = "[Link](javascript:alert() and more text";
       const result = sanitize(input);
-      expect(result).toBe("\\[Link\\](javascript:alert() and more text\n");
+      expect(result).toBe("\\[Link\\](javascript\\:alert() and more text\n");
     });
 
     test("incomplete dangerous URLs", () => {
       const input = "[Link](data:text/html,<script";
       const result = sanitize(input);
-      expect(result).toBe("\\[Link\\](data:text/html,\\<\\script\n");
+      expect(result).toBe("\\[Link\\](data\\:text/html,\\<\\script\n");
     });
 
     test("URL fragments in malformed syntax", () => {
       const input = "[Link](https://evil.com#fragment and text";
       const result = sanitize(input);
-      expect(result).toBe("\\[Link\\](https://evil.com#fragment and text\n");
+      expect(result).toBe("\\[Link\\](https\\://evil.com#fragment and text\n");
     });
   });
 
@@ -221,7 +221,7 @@ describe("Malformed Markdown Edge Cases", () => {
         "[<div>broken](https://example.com</div> ![img](https://images.com **bold**";
       const result = sanitize(input);
       expect(result).toBe(
-        "\\[\n\nbroken\\](https://example.com\n\n!\\[img\\](https://images.com **bold**\n",
+        "\\[\n\nbroken\\](https\\://example.com\n\n!\\[img\\](https\\://images.com **bold**\n",
       );
     });
 
