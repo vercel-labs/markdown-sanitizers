@@ -161,15 +161,9 @@ export class HtmlSanitizer {
       // Handle alt attributes that might contain HTML
       if (node.hasAttribute && node.hasAttribute("alt")) {
         const alt = node.getAttribute("alt") || "";
-        // If alt text contains HTML-like content, escape it
-        if (alt.includes("<") || alt.includes(">")) {
-          const safeAlt = alt
-            .replace(/</g, "&lt;")
-            .replace(/>/g, "&gt;")
-            .replace(/"/g, "&quot;")
-            .replace(/'/g, "&#x27;");
-          node.setAttribute("alt", safeAlt);
-        }
+        // If alt text contains HTML-like content, remove it.
+        // We cannot find a safe way to escape it across parsers.
+        node.setAttribute("alt", alt.replace(/[<>="'\[\]]/g, ""));
       }
     });
 

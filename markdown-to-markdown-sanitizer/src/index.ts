@@ -39,7 +39,7 @@ export class MarkdownSanitizer {
       emDelimiter: "*",
       strongDelimiter: "**",
       linkStyle: "inlined",
-      linkReferenceStyle: "full",
+      linkReferenceStyle: "collapsed",
     });
     const defaultEscape = this.htmlToMarkdownProcessor.escape;
     this.htmlToMarkdownProcessor.escape = (html: string) => {
@@ -58,6 +58,7 @@ export class MarkdownSanitizer {
       moreEscaped = moreEscaped.replace(/(?<!\\)'/g, "\\'");
       moreEscaped = moreEscaped.replace(/(?<!\\)\[/g, "\\[");
       moreEscaped = moreEscaped.replace(/(?<!\\)\]/g, "\\]");
+      moreEscaped = moreEscaped.replace(/(?<!\\)\:/g, "\\:");
 
       // Handle special case: turn \<tag into \\<tag for all HTML tags
       moreEscaped = moreEscaped.replace(/\\<([a-zA-Z]+)/g, "\\<\\$1");

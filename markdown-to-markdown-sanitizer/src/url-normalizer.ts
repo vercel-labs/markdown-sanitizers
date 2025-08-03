@@ -19,7 +19,11 @@ export class UrlNormalizer {
       ) {
         return "";
       }
-      return normalized;
+      // Replace characters that could confuse markdown with %-encoded characters
+      return normalized.replace(
+        /[\!\(\)\[\]`]/g,
+        (match) => `%${match.charCodeAt(0).toString(16)}`
+      );
     } catch {
       // Invalid URL - reject
       return "";
