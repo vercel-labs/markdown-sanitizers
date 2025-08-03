@@ -66,6 +66,19 @@ export class MarkdownSanitizer {
       return moreEscaped;
     };
 
+    // Add custom rule to prevent autolink generation to avoid embedding attacks
+    this.htmlToMarkdownProcessor.addRule('preventAutolinks', {
+      filter: (node) => {
+        return node.nodeName === 'A' && 
+               node.getAttribute('href') === node.textContent?.trim();
+      },
+      replacement: (content, node) => {
+        const href = node.getAttribute('href') || '';
+        // Always use explicit link syntax, never autolinks
+        return `[${content}](${href})`;
+      }
+    });
+
     // Add GFM plugin for tables and other GitHub Flavored Markdown features
     this.htmlToMarkdownProcessor.use(gfm);
 
