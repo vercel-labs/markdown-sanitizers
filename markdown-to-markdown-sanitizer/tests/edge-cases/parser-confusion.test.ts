@@ -74,14 +74,14 @@ describe("Parser Confusion Tests", () => {
       const input =
         '![<script>alert("xss")</script>Safe image](https://images.com/pic.jpg)';
       const result = sanitize(input);
-      expect(result).toBe("![<script>alert(\"xss\")</script>Safe image](https://images.com/pic.jpg)\n");
+      expect(result).toBe("![&lt;script&gt;alert(&quot;xss&quot;)&lt;/script&gt;Safe image](https://images.com/pic.jpg)\n");
     });
 
     test("iframe inside image alt text", () => {
       const input =
         '![<iframe src="javascript:alert()"></iframe>Description](https://images.com/pic.jpg)';
       const result = sanitize(input);
-      expect(result).toBe("![<iframe src=\"javascript:alert()\"></iframe>Description](https://images.com/pic.jpg)\n");
+      expect(result).toBe("![&lt;iframe src=&quot;javascript:alert()&quot;&gt;&lt;/iframe&gt;Description](https://images.com/pic.jpg)\n");
     });
 
     test("nested HTML tags inside image alt text", () => {
@@ -89,7 +89,7 @@ describe("Parser Confusion Tests", () => {
         "![<div><p>Text with <strong>bold</strong></p></div>](https://images.com/pic.jpg)";
       const result = sanitize(input);
       expect(result).toBe(
-        "![<div><p>Text with <strong>bold</strong></p></div>](https://images.com/pic.jpg)\n",
+        "![&lt;div&gt;&lt;p&gt;Text with &lt;strong&gt;bold&lt;/strong&gt;&lt;/p&gt;&lt;/div&gt;](https://images.com/pic.jpg)\n",
       );
     });
   });

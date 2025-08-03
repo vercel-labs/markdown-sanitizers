@@ -140,7 +140,7 @@ export class HtmlSanitizer {
       FORBID_ATTR: [],
     });
 
-    // Add hook to handle URL sanitization
+    // Add hook to handle URL sanitization and dangerous content in attributes
     customPurify.addHook("afterSanitizeAttributes", (node) => {
       // Handle href attributes
       if (node.hasAttribute && node.hasAttribute("href")) {
@@ -154,6 +154,20 @@ export class HtmlSanitizer {
         const url = node.getAttribute("src") || "";
         const sanitizedUrl = this.urlNormalizer.sanitizeUrl(url, "src");
         node.setAttribute("src", sanitizedUrl);
+      }
+      
+      // Handle alt attributes that might contain HTML
+      if (node.hasAttribute && node.hasAttribute("alt")) {
+        const alt = node.getAttribute("alt") || "";
+        // If alt text contains HTML-like content, escape it
+        if (alt.includes("<") || alt.includes(">")) {
+          const safeAlt = alt
+            .replace(/</g, "&lt;")
+            .replace(/>/g, "&gt;")
+            .replace(/"/g, "&quot;")
+            .replace(/'/g, "&#x27;");
+          node.setAttribute("alt", safeAlt);
+        }
       }
     });
 
