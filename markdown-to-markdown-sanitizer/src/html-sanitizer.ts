@@ -136,7 +136,9 @@ export class HtmlSanitizer {
       KEEP_CONTENT: true,
       ADD_TAGS: ["#text"],
       ADD_ATTR: [],
+      // Not needed, we use the safer allow list
       FORBID_TAGS: [],
+      // Not needed, we use the safer allow list
       FORBID_ATTR: [],
     });
 
@@ -155,7 +157,7 @@ export class HtmlSanitizer {
         const sanitizedUrl = this.urlNormalizer.sanitizeUrl(url, "src");
         node.setAttribute("src", sanitizedUrl);
       }
-      
+
       // Handle alt attributes that might contain HTML
       if (node.hasAttribute && node.hasAttribute("alt")) {
         const alt = node.getAttribute("alt") || "";

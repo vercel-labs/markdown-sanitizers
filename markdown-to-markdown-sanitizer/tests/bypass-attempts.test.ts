@@ -102,9 +102,13 @@ describe("Markdown Sanitizer Bypass Attempts", () => {
     const srcElements = document.querySelectorAll("[src]");
     srcElements.forEach((element) => {
       const src = element.getAttribute("src");
-      if (src && isDangerousUrl(src)) {
+      if (!src) {
+        return;
+      }
+      const issue = isDangerousUrl(src);
+      if (issue) {
         issues.push(
-          `Dangerous src attribute found: ${src}: ${element.outerHTML}`
+          `Dangerous src attribute found: ${src} (${issue}): ${element.outerHTML}`
         );
       }
     });
@@ -113,9 +117,13 @@ describe("Markdown Sanitizer Bypass Attempts", () => {
     const hrefElements = document.querySelectorAll("[href]");
     hrefElements.forEach((element) => {
       const href = element.getAttribute("href");
-      if (href && isDangerousUrl(href)) {
+      if (!href) {
+        return;
+      }
+      const issue = isDangerousUrl(href);
+      if (issue) {
         issues.push(
-          `Dangerous href attribute found: ${href}: ${element.outerHTML}`
+          `Dangerous href attribute found: ${href} (${issue}): ${element.outerHTML}`
         );
       }
     });
@@ -147,7 +155,7 @@ describe("Markdown Sanitizer Bypass Attempts", () => {
     return issues;
   };
 
-  const isDangerousUrl = (url: string): boolean => {
+  const isDangerousUrl = (url: string): false | string => {
     if (url === "/forbidden") {
       return false;
     }
@@ -159,14 +167,9 @@ describe("Markdown Sanitizer Bypass Attempts", () => {
     try {
       const parsedUrl = new URL(url);
 
-      // Allow certain safe paths
-      if (url === "/forbidden" || url === "#") {
-        return false;
-      }
-
       // Check if protocol is dangerous
       if (parsedUrl.protocol !== "https:" && parsedUrl.protocol !== "http:") {
-        return true;
+        return "bad protocol";
       }
 
       // Check if origin is trusted
@@ -175,10 +178,14 @@ describe("Markdown Sanitizer Bypass Attempts", () => {
         return trustedUrl.origin === parsedUrl.origin;
       });
 
-      return !isTrustedOrigin;
+      if (!isTrustedOrigin) {
+        return "untrusted origin";
+      }
+
+      return false;
     } catch {
       // If URL parsing fails, consider it dangerous
-      return true;
+      return "url parsing failed";
     }
   };
 
@@ -207,7 +214,7 @@ describe("Markdown Sanitizer Bypass Attempts", () => {
             );
 
             // Validate the HTML
-            const issues = validateHtml(sanitized);
+            const issues = validateHtml(html);
 
             // Log details for debugging
             if (issues.length > 0) {
