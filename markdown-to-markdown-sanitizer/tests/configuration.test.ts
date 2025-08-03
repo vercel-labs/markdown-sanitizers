@@ -147,7 +147,7 @@ describe("Configuration Options", () => {
       const input = '<script>alert("xss")</script><strong>Safe</strong>';
       const result = sanitizer.sanitize(input);
 
-      expect(result).toBe("<strong>Safe</strong>\n");
+      expect(result).toBe("**Safe**\n");
     });
   });
 

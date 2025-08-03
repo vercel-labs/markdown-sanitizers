@@ -82,9 +82,8 @@ describe("Streaming Sanitization", () => {
       const result2 = sanitizer.write('<script>alert("xss")</script>\n');
       const final = sanitizer.end();
 
-      expect(result1).toContain("<strong>Bold text</strong>");
-      expect(result2).not.toContain("<script>");
-      expect(result2).not.toContain("alert");
+      expect(result1).toBe("**Bold text**\n");
+      expect(result2).toBe("");
       expect(final).toBe("");
     });
   });
@@ -122,10 +121,10 @@ describe("Streaming Sanitization", () => {
       result += sanitizer.end();
 
       expect(result).toContain("## Section");
-      expect(result).toContain("* List item 1");
+      expect(result).toContain("*   List item 1");
       expect(result).toContain("[link](https://example.com/)");
       expect(result).toContain("![image](https://images.com/pic.jpg)");
-      expect(result).toContain("&gt; Blockquote");
+      expect(result).toContain("> Blockquote");
       expect(result).toContain("**bold**");
     });
   });
@@ -233,7 +232,7 @@ describe("Streaming Sanitization", () => {
       expect(result).toContain("[Bad link](#)");
       expect(result).toContain("![Good image](https://images.com/pic.jpg)");
       expect(result).toContain("![Bad image](/forbidden)");
-      expect(result).toContain("<strong>Bold HTML</strong>");
+      expect(result).toContain("**Bold HTML**");
       expect(result).not.toContain("<script>");
       expect(result).not.toContain("alert");
     });

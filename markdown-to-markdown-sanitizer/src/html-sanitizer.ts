@@ -146,24 +146,14 @@ export class HtmlSanitizer {
       if (node.hasAttribute && node.hasAttribute("href")) {
         const url = node.getAttribute("href") || "";
         const sanitizedUrl = this.urlNormalizer.sanitizeUrl(url, "href");
-        if (sanitizedUrl === "#") {
-          // For blocked hrefs, remove the href attribute entirely
-          node.removeAttribute("href");
-        } else {
-          node.setAttribute("href", sanitizedUrl);
-        }
+        node.setAttribute("href", sanitizedUrl);
       }
 
       // Handle src attributes
       if (node.hasAttribute && node.hasAttribute("src")) {
         const url = node.getAttribute("src") || "";
         const sanitizedUrl = this.urlNormalizer.sanitizeUrl(url, "src");
-        if (sanitizedUrl === "/forbidden") {
-          // Remove the entire element if src is blocked
-          node.remove();
-        } else {
-          node.setAttribute("src", sanitizedUrl);
-        }
+        node.setAttribute("src", sanitizedUrl);
       }
     });
 

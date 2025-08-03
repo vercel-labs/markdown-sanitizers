@@ -25,7 +25,7 @@ describe("Security Attack Prevention", () => {
 
       attacks.forEach((attack) => {
         const result = sanitize(attack);
-        expect(result).toBe("[Click](#)\n");
+        expect(result).toBe("Click\n");
       });
     });
 
@@ -38,7 +38,7 @@ describe("Security Attack Prevention", () => {
 
       attacks.forEach((attack) => {
         const result = sanitize(attack);
-        expect(result).toBe("![img](/forbidden)\n");
+        expect(result).toBe("");
       });
     });
 
@@ -52,13 +52,13 @@ describe("Security Attack Prevention", () => {
       const results = attacks.map((attack) => sanitize(attack));
 
       // First attack should be completely sanitized
-      expect(results[0]).toBe("[Click](#)\n");
+      expect(results[0]).toBe("Click\n");
 
       // Second attack gets escaped - the dangerous parts are removed
-      expect(results[1]).toBe("!\\[img]\\(data:image/svg+xml,)\n");
+      expect(results[1]).toBe("!\\[img\\](data:image/svg+xml,)\n");
 
       // Third attack should be sanitized
-      expect(results[2]).toBe("[Click](#)\n");
+      expect(results[2]).toBe("Click\n");
     });
 
     test("blocks vbscript: protocol", () => {
@@ -68,8 +68,8 @@ describe("Security Attack Prevention", () => {
       ];
 
       const results = attacks.map((attack) => sanitize(attack));
-      expect(results[0]).toBe("[Click](#)\n");
-      expect(results[1]).toBe("![img](/forbidden)\n");
+      expect(results[0]).toBe("Click\n");
+      expect(results[1]).toBe("");
     });
 
     test("blocks file: protocol", () => {
@@ -79,8 +79,8 @@ describe("Security Attack Prevention", () => {
       ];
 
       const results = attacks.map((attack) => sanitize(attack));
-      expect(results[0]).toBe("[Local file](#)\n");
-      expect(results[1]).toBe("![Local file](/forbidden)\n");
+      expect(results[0]).toBe("Local file\n");
+      expect(results[1]).toBe("");
     });
   });
 
@@ -102,8 +102,8 @@ describe("Security Attack Prevention", () => {
       expect(results[2]).toBe("");
       expect(results[3]).toBe("");
 
-      // Encoded attack results in escaped backslash
-      expect(results[4]).toBe("\\\n");
+      // Encoded attack gets properly escaped
+      expect(results[4]).toBe("\\<\\script\\>alert(\\\"xss\\\")\\</script\\>\n");
     });
 
     test("removes iframe injection attempts", () => {
@@ -115,7 +115,7 @@ describe("Security Attack Prevention", () => {
 
       attacks.forEach((attack) => {
         const result = sanitize(attack);
-        expect(result).toBe("\n");
+        expect(result).toBe("");
       });
     });
 
@@ -128,7 +128,7 @@ describe("Security Attack Prevention", () => {
 
       attacks.forEach((attack) => {
         const result = sanitize(attack);
-        expect(result).toBe("\n");
+        expect(result).toBe("");
       });
     });
 
@@ -143,14 +143,14 @@ describe("Security Attack Prevention", () => {
 
       const results = attacks.map((attack) => sanitize(attack));
 
-      // Event handlers are removed, safe HTML preserved
-      expect(results[0]).toBe('<img src="https://example.com/x">\n');
-      expect(results[1]).toBe("<div>Click me</div>\n");
+      // Event handlers are removed, content converted to markdown
+      expect(results[0]).toBe('![](https://example.com/x)\n');
+      expect(results[1]).toBe("Click me\n");
 
       // Dangerous tags completely removed
-      expect(results[2]).toBe("\n");
-      expect(results[3]).toBe("\n");
-      expect(results[4]).toBe("\n");
+      expect(results[2]).toBe("");
+      expect(results[3]).toBe("");
+      expect(results[4]).toBe("");
     });
   });
 
@@ -180,7 +180,7 @@ describe("Security Attack Prevention", () => {
       // Path traversal attempts get normalized to absolute URLs
       expect(results[0]).toBe("[File](https://example.com/etc/passwd)\n");
       expect(results[1]).toBe(
-        "[File](https://example.com/....../windows/system32/config/sam)\n"
+        "[File](https://example.com/......%5Cwindows%5Csystem32%5Cconfig%5Csam)\n"
       );
       expect(results[2]).toBe(
         "![Image](https://example.com/sensitive/image.jpg)\n"
@@ -232,7 +232,7 @@ describe("Security Attack Prevention", () => {
 [safe-ref]: javascript:alert("xss")`;
 
       const result = sanitize(attack);
-      expect(result).toBe("[Looks safe][safe-ref]\n\n[safe-ref]: #\n");
+      expect(result).toBe("Looks safe\n");
     });
 
     test("handles deeply nested markdown", () => {
@@ -313,7 +313,7 @@ describe("Security Attack Prevention", () => {
       const results = attacks.map((attack) => sanitize(attack));
 
       expect(results[0]).toBe("![Track](/forbidden)\n");
-      expect(results[1]).toBe("\n");
+      expect(results[1]).toBe("![](/forbidden)\n");
       expect(results[2]).toBe("![Beacon](/forbidden)\n");
     });
 
@@ -326,7 +326,7 @@ describe("Security Attack Prevention", () => {
       const results = attacks.map((attack) => sanitize(attack));
 
       expect(results[0]).toBe("[Click](#)\n");
-      expect(results[1]).toBe("<a>Innocent link</a>\n");
+      expect(results[1]).toBe("[Innocent link](#)\n");
     });
   });
 

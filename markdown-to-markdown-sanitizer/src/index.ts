@@ -1,8 +1,11 @@
 import { unified } from "unified";
 import remarkParse from "remark-parse";
-import remarkStringify from "remark-stringify";
-import { visit } from "unist-util-visit";
-import type { Root } from "mdast";
+import remarkRehype from "remark-rehype";
+import rehypeRaw from "rehype-raw";
+import rehypeStringify from "rehype-stringify";
+import TurndownService from "turndown";
+// @ts-ignore - no types available for turndown-plugin-gfm
+import { gfm } from "turndown-plugin-gfm";
 import { UrlNormalizer } from "./url-normalizer";
 import { HtmlSanitizer } from "./html-sanitizer";
 import { SanitizeOptions } from "./types";
@@ -10,7 +13,8 @@ import { SanitizeOptions } from "./types";
 export class MarkdownSanitizer {
   private options: SanitizeOptions;
   private buffer: string = "";
-  private processor: any;
+  private markdownToHtmlProcessor: any;
+  private htmlToMarkdownProcessor: TurndownService;
   private urlNormalizer: UrlNormalizer;
   private htmlSanitizer: HtmlSanitizer;
 
@@ -20,8 +24,49 @@ export class MarkdownSanitizer {
       throw new Error("defaultOrigin is required");
     }
 
-    // Create unified processor with remark plugins
-    this.processor = unified().use(remarkParse).use(remarkStringify);
+    // Create unified processor for markdown to HTML with raw HTML support
+    this.markdownToHtmlProcessor = unified()
+      .use(remarkParse)
+      .use(remarkRehype, { allowDangerousHtml: true })
+      .use(rehypeRaw)
+      .use(rehypeStringify);
+
+    // Create turndown processor for HTML to markdown with GFM support
+    this.htmlToMarkdownProcessor = new TurndownService({
+      headingStyle: "atx",
+      codeBlockStyle: "fenced",
+      fence: "```",
+      emDelimiter: "*",
+      strongDelimiter: "**",
+      linkStyle: "inlined",
+      linkReferenceStyle: "full",
+    });
+    const defaultEscape = this.htmlToMarkdownProcessor.escape;
+    this.htmlToMarkdownProcessor.escape = (html: string) => {
+      const escaped = defaultEscape(html);
+      // Turn < into \< and > into \> and = into \= and " into \" and ' into \'
+      // But don't add \ to < or > if they are already escaped.
+      // Additionally turn \<img into \<\img
+
+      let moreEscaped = escaped;
+
+      // Escape special characters that aren't already escaped
+      moreEscaped = moreEscaped.replace(/(?<!\\)</g, "\\<");
+      moreEscaped = moreEscaped.replace(/(?<!\\)>/g, "\\>");
+      moreEscaped = moreEscaped.replace(/(?<!\\)=/g, "\\=");
+      moreEscaped = moreEscaped.replace(/(?<!\\)"/g, '\\"');
+      moreEscaped = moreEscaped.replace(/(?<!\\)'/g, "\\'");
+      moreEscaped = moreEscaped.replace(/(?<!\\)\[/g, "\\[");
+      moreEscaped = moreEscaped.replace(/(?<!\\)\]/g, "\\]");
+
+      // Handle special case: turn \<tag into \\<tag for all HTML tags
+      moreEscaped = moreEscaped.replace(/\\<([a-zA-Z]+)/g, "\\<\\$1");
+
+      return moreEscaped;
+    };
+
+    // Add GFM plugin for tables and other GitHub Flavored Markdown features
+    this.htmlToMarkdownProcessor.use(gfm);
 
     // Initialize URL normalizer
     this.urlNormalizer = new UrlNormalizer({
@@ -45,30 +90,23 @@ export class MarkdownSanitizer {
     }
 
     try {
-      // Parse the markdown first
-      const tree = this.processor.parse(markdown) as Root;
+      // Step 1: Parse markdown and convert to HTML using remark
+      const html = String(this.markdownToHtmlProcessor.processSync(markdown));
 
-      // Apply URL sanitization to links, images, and definitions
-      visit(tree, ["link", "image", "definition"], (node) => {
-        if (node.type === "link" && node.url) {
-          node.url = this.urlNormalizer.sanitizeUrl(node.url, "href");
-        } else if (node.type === "image" && node.url) {
-          node.url = this.urlNormalizer.sanitizeUrl(node.url, "src");
-        } else if (node.type === "definition" && node.url) {
-          node.url = this.urlNormalizer.sanitizeUrl(node.url, "href");
-        } else if ("url" in node && node.url) {
-          node.url = this.urlNormalizer.sanitizeUrl(node.url, "href");
-        }
-      });
+      // Step 2: Sanitize the HTML
+      const sanitizedHtml = this.htmlSanitizer.sanitizeHtml(html);
 
-      // Serialize back to markdown
-      let result = String(this.processor.stringify(tree));
+      // Step 3: Convert sanitized HTML back to markdown using turndown
+      let result = this.htmlToMarkdownProcessor.turndown(sanitizedHtml);
 
-      result = this.htmlSanitizer.sanitizeHtml(result);
+      // Ensure trailing newline to match expected test output
+      if (result && !result.endsWith("\n")) {
+        result += "\n";
+      }
 
       return result;
     } catch (error) {
-      // Fallback: return empty string if parsing fails
+      // Fallback: return empty string if processing fails
       console.error("Markdown sanitization failed:", error);
       return "";
     }

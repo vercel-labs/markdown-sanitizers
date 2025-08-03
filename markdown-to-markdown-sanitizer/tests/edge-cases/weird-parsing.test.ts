@@ -19,7 +19,7 @@ describe("Weird Parsing Edge Cases", () => {
     test("text that could be interpreted multiple ways", () => {
       const input = "Price: $[100] or *special* offer: 50% off!";
       const result = sanitize(input);
-      expect(result).toBe("Price: $\\[100] or *special* offer: 50% off!\n");
+      expect(result).toBe("Price: $\\[100\\] or *special* offer: 50% off!\n");
     });
 
     test("URL-like text that is not a link", () => {
@@ -31,14 +31,14 @@ describe("Weird Parsing Edge Cases", () => {
     test("emphasis markers in unexpected contexts", () => {
       const input = "Math: 2*3*4 = 24 and _constant_ = 42";
       const result = sanitize(input);
-      expect(result).toBe("Math: 2*3*4 = 24 and *constant* = 42\n");
+      expect(result).toBe("Math: 2*3*4 \\= 24 and *constant* \\= 42\n");
     });
 
     test("code-like text without backticks", () => {
       const input = 'Use document.getElementById("test") to get element';
       const result = sanitize(input);
       expect(result).toBe(
-        'Use document.getElementById("test") to get element\n',
+        'Use document.getElementById(\\"test\\") to get element\n',
       );
     });
   });
@@ -56,7 +56,7 @@ describe("Weird Parsing Edge Cases", () => {
     test("empty link text and URLs", () => {
       const input = "[](https://example.com) and [text]()";
       const result = sanitize(input);
-      expect(result).toBe("[](https://example.com/) and [text]()\n");
+      expect(result).toBe("[](https://example.com/)and [text](https://example.com/)\n");
     });
 
     test("single character elements", () => {
@@ -120,14 +120,14 @@ describe("Weird Parsing Edge Cases", () => {
       const input = "Formula: f(x) = x*2 + [constant] where *x* > 0";
       const result = sanitize(input);
       expect(result).toBe(
-        "Formula: f(x) = x\\*2 + \\[constant] where *x* &gt; 0\n",
+        "Formula: f(x) \\= x\\*2 + \\[constant\\] where *x* \\> 0\n",
       );
     });
 
     test("scientific notation and formulas", () => {
       const input = "E = mc^2 and 1.23e-4 is scientific notation";
       const result = sanitize(input);
-      expect(result).toBe("E = mc^2 and 1.23e-4 is scientific notation\n");
+      expect(result).toBe("E \\= mc^2 and 1.23e-4 is scientific notation\n");
     });
 
     test("currency and financial notation", () => {
@@ -144,14 +144,14 @@ describe("Weird Parsing Edge Cases", () => {
       const input = 'Use getElementById("test") or querySelector("[data-id]")';
       const result = sanitize(input);
       expect(result).toBe(
-        'Use getElementById("test") or querySelector("\\[data-id]")\n',
+        'Use getElementById(\\"test\\") or querySelector(\\"\\[data-id\\]\\")\n',
       );
     });
 
     test("regex patterns with markdown-like characters", () => {
       const input = "Pattern: /[a-z]*\\d+/ matches text";
       const result = sanitize(input);
-      expect(result).toBe("Pattern: /\\[a-z]\\*\\d+/ matches text\n");
+      expect(result).toBe("Pattern: /\\[a-z\\]\\*\\\\d+/ matches text\n");
     });
 
     test("file paths with brackets and special chars", () => {
@@ -159,7 +159,7 @@ describe("Weird Parsing Edge Cases", () => {
         "Path: /home/user/[config]/file.txt and C:\\\\Program Files\\\\App";
       const result = sanitize(input);
       expect(result).toBe(
-        "Path: /home/user/\\[config]/file.txt and C:\\Program Files\\App\n",
+        "Path: /home/user/\\[config\\]/file.txt and C:\\\\Program Files\\\\App\n",
       );
     });
   });
@@ -170,7 +170,7 @@ describe("Weird Parsing Edge Cases", () => {
         "He said \"She said '[link](https://example.com)' was good\"";
       const result = sanitize(input);
       expect(result).toBe(
-        "He said \"She said '[link](https://example.com/)' was good\"\n",
+        "He said \\\"She said \\'[link](https://example.com/)\\' was good\\\"\n",
       );
     });
 
@@ -178,7 +178,7 @@ describe("Weird Parsing Edge Cases", () => {
       const input = "According to research [1] and studies [2][3]";
       const result = sanitize(input);
       expect(result).toBe(
-        "According to research \\[1] and studies \\[2]\\[3]\n",
+        "According to research \\[1\\] and studies \\[2\\]\\[3\\]\n",
       );
     });
 
@@ -197,21 +197,21 @@ describe("Weird Parsing Edge Cases", () => {
       const input =
         'Use <component prop="value"> in React or <tag>content</tag>';
       const result = sanitize(input);
-      expect(result).toBe("Use  in React or content\n");
+      expect(result).toBe("Use in React or content\n");
     });
 
     test("template engine syntax", () => {
       const input =
         "Template: {{variable}} or {%tag%} and [link](https://example.com)";
       const result = sanitize(input);
-      expect(result).toBe("  or {%tag%} and [link](https://example.com/)\n");
+      expect(result).toBe("or {%tag%} and [link](https://example.com/)\n");
     });
 
     test("pseudo-HTML comments", () => {
       const input =
         "Text <!-- not really a comment --> with [link](https://example.com)";
       const result = sanitize(input);
-      expect(result).toBe("Text  with [link](https://example.com/)\n");
+      expect(result).toBe("Text with [link](https://example.com/)\n");
     });
   });
 
@@ -279,14 +279,14 @@ describe("Weird Parsing Edge Cases", () => {
         "[Link1](https://example.com)\\r\\n[Link2](https://trusted.org)\\n";
       const result = sanitize(input);
       expect(result).toBe(
-        "[Link1](https://example.com/)\\r\\n[Link2](https://trusted.org/)\\n\n",
+        "[Link1](https://example.com/)\\\\r\\\\n[Link2](https://trusted.org/)\\\\n\n",
       );
     });
 
     test("trailing whitespace with markdown", () => {
       const input = "[Link](https://example.com)   \\n**Bold**  ";
       const result = sanitize(input);
-      expect(result).toBe("[Link](https://example.com/)   \\n**Bold**\n");
+      expect(result).toBe("[Link](https://example.com/) \\\\n**Bold**\n");
     });
 
     test("indentation and spacing patterns", () => {
@@ -305,7 +305,7 @@ describe("Weird Parsing Edge Cases", () => {
         "API endpoint: GET /api/v1/users[?limit=10] - see [docs](https://example.com/api)";
       const result = sanitize(input);
       expect(result).toBe(
-        "API endpoint: GET /api/v1/users\\[?limit=10] - see [docs](https://example.com/api)\n",
+        "API endpoint: GET /api/v1/users\\[?limit\\=10\\] - see [docs](https://example.com/api)\n",
       );
     });
 
@@ -314,7 +314,7 @@ describe("Weird Parsing Edge Cases", () => {
         "## Version 1.2.3 [2023-12-01]\\n- Fixed [issue #123](https://example.com/issue)";
       const result = sanitize(input);
       expect(result).toBe(
-        "## Version 1.2.3 \\[2023-12-01]\\n- Fixed [issue #123](https://example.com/issue)\n",
+        "## Version 1.2.3 \\[2023-12-01\\]\\\\n- Fixed [issue #123](https://example.com/issue)\n",
       );
     });
 
@@ -323,7 +323,7 @@ describe("Weird Parsing Edge Cases", () => {
         'Config: {key: "value"} or [JSON](https://example.com) **important** note!';
       const result = sanitize(input);
       expect(result).toBe(
-        'Config: {key: "value"} or [JSON](https://example.com/) **important** note!\n',
+        'Config: {key: \\"value\\"} or [JSON](https://example.com/) **important** note!\n',
       );
     });
   });

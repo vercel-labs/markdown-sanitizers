@@ -152,7 +152,8 @@ describe("AI SDK Middleware", () => {
 
       const result = await middleware.wrapGenerate({}, mockGenerate);
 
-      expect(result.text).toBe("<strong>Safe HTML</strong>\n");
+      // Script tags are stripped, but safe HTML is converted to markdown
+      expect(result.text).toBe("**Safe HTML**\n");
     });
   });
 
@@ -217,8 +218,9 @@ describe("AI SDK Middleware", () => {
       }
 
       const combined = chunks.join("");
+      // Script tags are stripped, safe HTML is converted to markdown
       expect(combined).toBe(
-        "<strong>Safe HTML</strong>\n<em>More safe HTML</em>\n",
+        "**Safe HTML**\n*More safe HTML*\n",
       );
     });
 

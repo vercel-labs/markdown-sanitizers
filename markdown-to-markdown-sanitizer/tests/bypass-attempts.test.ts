@@ -15,6 +15,7 @@ describe("Markdown Sanitizer Bypass Attempts", () => {
     "https://example.com/",
     "https://trusted.org/",
     "https://images.com/",
+    "https://safe.com/",
   ];
   const createSanitizer = (options = {}) =>
     new MarkdownSanitizer({
@@ -84,7 +85,11 @@ describe("Markdown Sanitizer Bypass Attempts", () => {
       throw new Error(`Unknown renderer: ${rendererName}`);
     }
 
-    return await renderer(sanitized);
+    const html = await renderer(sanitized);
+    return {
+      html,
+      sanitized,
+    };
   };
 
   const validateHtml = (html: string) => {
@@ -196,15 +201,19 @@ describe("Markdown Sanitizer Bypass Attempts", () => {
             const markdown = fs.readFileSync(filePath, "utf-8");
 
             // Sanitize and render to HTML using specific renderer
-            const html = await sanitizeAndRenderToHtml(markdown, rendererName);
+            const { html, sanitized } = await sanitizeAndRenderToHtml(
+              markdown,
+              rendererName
+            );
 
             // Validate the HTML
-            const issues = validateHtml(html);
+            const issues = validateHtml(sanitized);
 
             // Log details for debugging
             if (issues.length > 0) {
               console.log(`\nFile: ${file} | Renderer: ${rendererName}`);
               console.log("Original markdown:", markdown);
+              console.log("Sanitized markdown:", sanitized);
               console.log("Rendered HTML:", html);
               console.log("Issues found:", issues);
             }

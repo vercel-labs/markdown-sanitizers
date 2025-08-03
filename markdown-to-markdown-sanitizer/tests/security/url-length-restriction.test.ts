@@ -51,14 +51,14 @@ describe("URL Length Restriction", () => {
       const longPath = "a".repeat(201 - "https://example.com/".length);
       const input = `<a href="https://example.com/${longPath}">Link</a>`;
       const result = sanitize(input);
-      expect(result).toBe("<a>Link</a>\n");
+      expect(result).toBe("[Link](#)\n");
     });
 
     test("blocks URLs over 200 characters in HTML images", () => {
       const longPath = "a".repeat(201 - "https://images.com/".length);
       const input = `<img src="https://images.com/${longPath}" alt="Image">`;
       const result = sanitize(input);
-      expect(result).toBe("\n");
+      expect(result).toBe("![Image](/forbidden)\n");
     });
   });
 
@@ -123,7 +123,7 @@ describe("URL Length Restriction", () => {
       const result = sanitize(input);
       // The encoded URL will be longer due to %20 replacements
       // Remark escapes the URL in the output (note the trailing space is not trimmed)
-      expect(result).toBe(`\\[Link]\\(https://example.com/${spacedPath})\n`);
+      expect(result).toBe(`\\[Link\\](https://example.com/${spacedPath})\n`);
     });
   });
 
@@ -150,14 +150,14 @@ describe("URL Length Restriction", () => {
       const longPath = "a".repeat(201 - "https://example.com/".length);
       const input = `[Link text][ref]\n\n[ref]: https://example.com/${longPath}`;
       const result = sanitize(input);
-      expect(result).toBe("[Link text][ref]\n\n[ref]: #\n");
+      expect(result).toBe("[Link text](#)\n");
     });
 
     test("allows reference links with short URLs", () => {
       const input = "[Link text][ref]\n\n[ref]: https://example.com/short";
       const result = sanitize(input);
       expect(result).toBe(
-        "[Link text][ref]\n\n[ref]: https://example.com/short\n",
+        "[Link text](https://example.com/short)\n",
       );
     });
   });
@@ -191,7 +191,7 @@ describe("URL Length Restriction", () => {
 
       // Data URL (blocked for different reason, but length also matters)
       const dataUrl = `[Link](data:text/html,${longPath})`;
-      expect(sanitize(dataUrl)).toBe("[Link](#)\n");
+      expect(sanitize(dataUrl)).toBe("Link\n");
     });
   });
 
@@ -199,8 +199,8 @@ describe("URL Length Restriction", () => {
     test("handles empty URLs", () => {
       const input = "[Link]()";
       const result = sanitize(input);
-      // Empty URLs are preserved as-is by remark
-      expect(result).toBe("[Link]()\n");
+      // Empty URLs get normalized with default origin
+      expect(result).toBe("[Link](https://example.com/)\n");
     });
 
     test("handles malformed URLs that become long after normalization attempt", () => {
