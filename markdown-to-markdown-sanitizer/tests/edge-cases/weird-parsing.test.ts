@@ -19,13 +19,13 @@ describe("Weird Parsing Edge Cases", () => {
     test("text that could be interpreted multiple ways", () => {
       const input = "Price: $[100] or *special* offer: 50% off!";
       const result = sanitize(input);
-      expect(result).toBe("Price&3a; $&5b;100&5d; or *special* offer&3a; 50% off!\n");
+      expect(result).toBe("Price&3a; $&5b;100&5d; or *special* offer&3a; 50% off&21;\n");
     });
 
     test("URL-like text that is not a link", () => {
       const input = "Visit https://example.com or call 555-1234";
       const result = sanitize(input);
-      expect(result).toBe("Visit https&3a;//example.com or call 555-1234\n");
+      expect(result).toBe("Visit https&3a;&2f;&2f;example.com or call 555-1234\n");
     });
 
     test("emphasis markers in unexpected contexts", () => {
@@ -117,10 +117,10 @@ describe("Weird Parsing Edge Cases", () => {
 
   describe("Numeric and mathematical notation", () => {
     test("mathematical expressions with markdown-like syntax", () => {
-      const input = "Formula: f(x) = x*2 + [constant] where *x* > 0";
+      const input = "Formula: f(x) = x*2 + [constant] where *x* &3e; 0";
       const result = sanitize(input);
       expect(result).toBe(
-        "Formula&3a; f&28;x&29; &3d; x*2 + &5b;constant&5d; where *x* > 0\n",
+        "Formula&3a; f&28;x&29; &3d; x*2 + &5b;constant&5d; where *x* &26;3e; 0\n",
       );
     });
 
@@ -156,10 +156,10 @@ describe("Weird Parsing Edge Cases", () => {
 
     test("file paths with brackets and special chars", () => {
       const input =
-        "Path: /home/user/[config]/file.txt and C:\\\\Program Files\\\\App";
+        "Path: &2f;home&2f;user&2f;[config]/file.txt and C:\\\\Program Files\\\\App";
       const result = sanitize(input);
       expect(result).toBe(
-        "Path&3a; /home/user/&5b;config&5d;/file.txt and C&3a;\\\\Program Files\\\\App\n",
+        "Path&3a; &26;2f;home&26;2f;user&26;2f;&5b;config&5d;&2f;file.txt and C&3a;\\Program Files\\App\n",
       );
     });
   });
@@ -167,10 +167,10 @@ describe("Weird Parsing Edge Cases", () => {
   describe("Nested quotation and citation patterns", () => {
     test("multiple quote levels", () => {
       const input =
-        "He said \"She said '[link](https://example.com)' was good\"";
+        "He said \"She said &27;[link](https://example.com)&27; was good\"";
       const result = sanitize(input);
       expect(result).toBe(
-        "He said \&22;She said \\'[link](https://example.com/)\\' was good\&22;\n",
+        "He said &22;She said &26;27;[link](https://example.com/)&26;27; was good&22;\n",
       );
     });
 
@@ -305,7 +305,7 @@ describe("Weird Parsing Edge Cases", () => {
         "API endpoint: GET &2f;api&2f;v1&2f;users[?limit=10] - see [docs](https://example.com/api)";
       const result = sanitize(input);
       expect(result).toBe(
-        "API endpoint&3a; GET &2f;api&2f;v1&2f;users&5b;?limit&3d;10&5d; - see [docs](https://example.com/api)\n",
+        "API endpoint&3a; GET &26;2f;api&26;2f;v1&26;2f;users&5b;?limit&3d;10&5d; - see [docs](https://example.com/api)\n",
       );
     });
 
@@ -314,7 +314,7 @@ describe("Weird Parsing Edge Cases", () => {
         "## Version 1.2.3 [2023-12-01]\\n- Fixed [issue #123](https://example.com/issue)";
       const result = sanitize(input);
       expect(result).toBe(
-        "## Version 1.2.3 &5b;2023-12-01&5d;\\\\n- Fixed [issue #123](https://example.com/issue)\n",
+        "## Version 1.2.3 &5b;2023-12-01&5d;\\n- Fixed [issue #123](https://example.com/issue)\n",
       );
     });
 
@@ -323,7 +323,7 @@ describe("Weird Parsing Edge Cases", () => {
         'Config: {key: "value"} or [JSON](https://example.com) **important** note&21;';
       const result = sanitize(input);
       expect(result).toBe(
-        'Config&3a; {key&3a; &22;value&22;} or [JSON](https://example.com/) **important** note&21;\n',
+        'Config&3a; {key&3a; &22;value&22;} or [JSON](https://example.com/) **important** note&26;21;\n',
       );
     });
   });

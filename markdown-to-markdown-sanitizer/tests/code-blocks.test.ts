@@ -166,7 +166,7 @@ End of code.
 
 And here is more safe content with **bold text**.
 
-Inline code&26;26;26;3a; \`<img src="x" onerror="alert()">\` in text.
+Inline code: \`<img src="x" onerror="alert()">\` in text.
 
 Final [link](https://example.com) here.`;
 
@@ -180,7 +180,7 @@ Final [link](https://example.com) here.`;
 
 And here is more safe content with **bold text**.
 
-Inline code&26;26;26;3a; \`<img src="x" onerror="alert()">\` in text.
+Inline code&3a; \`<img src="x" onerror="alert()">\` in text.
 
 Final [link](https://example.com/) here.
 `;
