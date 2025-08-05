@@ -117,9 +117,22 @@ export default function hardenReactMarkdown<
     };
 
     const hardenedComponents: Components = {
-      a: ({ href, children, ...props }) => {
+      a: ({ href, children, node, ...props }) => {
         const transformedUrl = transformUrl(href, allowedLinkPrefixes);
         if (transformedUrl !== null) {
+          // If user provided a custom 'a' component, use it with the transformed URL
+          if (userComponents?.a) {
+            return createElement(userComponents.a, {
+              href: transformedUrl,
+              children,
+              node,
+              target: "_blank",
+              rel: "noopener noreferrer",
+              ...props,
+            });
+          }
+          
+          // Otherwise use default anchor with security attributes
           return (
             <a
               href={transformedUrl}
@@ -137,9 +150,20 @@ export default function hardenReactMarkdown<
           </span>
         );
       },
-      img: ({ src, alt, ...props }) => {
+      img: ({ src, alt, node, ...props }) => {
         const transformedUrl = transformUrl(src, allowedImagePrefixes);
         if (transformedUrl !== null) {
+          // If user provided a custom 'img' component, use it with the transformed URL
+          if (userComponents?.img) {
+            return createElement(userComponents.img, {
+              src: transformedUrl,
+              alt,
+              node,
+              ...props,
+            });
+          }
+          
+          // Otherwise use default img
           return <img src={transformedUrl} alt={alt} {...props} />;
         }
         return (

@@ -551,9 +551,37 @@ block code
         </HardenedReactMarkdown>
       );
 
-      // Should use hardened component, not custom one
+      // Should use hardened component, not custom one, for blocked URLs
       expect(screen.queryByTestId("custom-link")).not.toBeInTheDocument();
       expect(screen.getByText("Link [blocked]")).toBeInTheDocument();
+    });
+
+    it("uses custom components with security enhancements for allowed URLs", () => {
+      const customComponents = {
+        a: ({ children, className, ...props }: any) => (
+          <a data-testid="custom-link" className={`custom-class ${className || ''}`} {...props}>
+            {children}
+          </a>
+        ),
+      };
+
+      render(
+        <HardenedReactMarkdown 
+          components={customComponents}
+          defaultOrigin="https://example.com"
+          allowedLinkPrefixes={["https://example.com/"]}
+        >
+          {"[Link](https://example.com/page)"}
+        </HardenedReactMarkdown>
+      );
+
+      // Should use custom component with security enhancements
+      const link = screen.getByTestId("custom-link");
+      expect(link).toBeInTheDocument();
+      expect(link).toHaveAttribute("href", "https://example.com/page");
+      expect(link).toHaveAttribute("target", "_blank");
+      expect(link).toHaveAttribute("rel", "noopener noreferrer");
+      expect(link).toHaveClass("custom-class");
     });
 
     it("accepts remarkPlugins and rehypePlugins", () => {
