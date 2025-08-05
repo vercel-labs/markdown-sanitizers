@@ -2,7 +2,7 @@
 
 A robust markdown sanitizer focused on avoiding unexpected image and link URLs in markdown.
 
-This sanitizer consumes markdown and produces markdown output. Generally speaking, this is
+The sanitizer consumes markdown and produces markdown output. Generally speaking, this is
 less secure sanitizing the final rendered output such as the generated HTML. Hence, this
 package should only be used when the markdown is rendered by a third-party such as GitHub
 or GitLab.
@@ -15,12 +15,12 @@ This comes at the trade-off of reduced human readability of the generated markdo
 it is only recommended to use this package when the markdown is meant to be rendered to an
 output format such as HTML, rather than being directly consumed by humans.
 
-## Why is markdown-to-markdown sanitization hard
+## Why is markdown-to-markdown sanitization hard?
 
 Markdown parsing substantially differs between implementations. Hence the parsed representation
 that may appear valid with one parser, may not be valid with another.
 
-The way this package tests doing a good job is:
+The way this package tests whether it is doing a good job is:
 
 - Tests in `tests/bypass-attempts/*.md`
 - Sanitize with this package
