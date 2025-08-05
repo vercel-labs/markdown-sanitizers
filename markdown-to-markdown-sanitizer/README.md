@@ -46,7 +46,7 @@ Current steps:
 - Escape all characters in text that are markdown control characters as HTML-entities
 
 The last step is causing the reduced readability of the output (see trade-off documented above)
-but it leads to avoiding parsing ambiguity. Backslash-based escaping has proven to lead to parsing
+but it robustly avoids parsing ambiguities Backslash-based escaping has proven to lead to parsing
 ambiguities between implementations.
 
 ## Features
