@@ -142,7 +142,7 @@ describe("Malformed Markdown Edge Cases", () => {
     test("backslashes in various positions", () => {
       const input = "[Link\\text](https://example.com\\path) and \\[escaped\\]";
       const result = sanitize(input);
-      expect(result).toBe("[Link\\\\text](#) and &5b;escaped&5d;\n");
+      expect(result).toBe("[Link&5c;text](#) and &5b;escaped&5d;\n");
     });
 
     test("quotes in link text and URLs", () => {

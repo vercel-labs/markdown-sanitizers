@@ -151,7 +151,7 @@ describe("Weird Parsing Edge Cases", () => {
     test("regex patterns with markdown-like characters", () => {
       const input = "Pattern: /[a-z]*\\d+/ matches text";
       const result = sanitize(input);
-      expect(result).toBe("Pattern&3a; &2f;&5b;a-z&5d;*\\d+&2f; matches text\n");
+      expect(result).toBe("Pattern&3a; &2f;&5b;a-z&5d;*&5c;d+&2f; matches text\n");
     });
 
     test("file paths with brackets and special chars", () => {
@@ -159,7 +159,7 @@ describe("Weird Parsing Edge Cases", () => {
         "Path: &2f;home&2f;user&2f;[config]/file.txt and C:\\\\Program Files\\\\App";
       const result = sanitize(input);
       expect(result).toBe(
-        "Path&3a; &26;2f;home&26;2f;user&26;2f;&5b;config&5d;&2f;file.txt and C&3a;\\Program Files\\App\n",
+        "Path&3a; &26;2f;home&26;2f;user&26;2f;&5b;config&5d;&2f;file.txt and C&3a;&5c;Program Files&5c;App\n",
       );
     });
   });
@@ -279,14 +279,14 @@ describe("Weird Parsing Edge Cases", () => {
         "[Link1](https://example.com)\\r\\n[Link2](https://trusted.org)\\n";
       const result = sanitize(input);
       expect(result).toBe(
-        "[Link1](https://example.com/)\\\\r\\\\n[Link2](https://trusted.org/)\\\\n\n",
+        "[Link1](https://example.com/)&5c;r&5c;n[Link2](https://trusted.org/)&5c;n\n",
       );
     });
 
     test("trailing whitespace with markdown", () => {
       const input = "[Link](https://example.com)   \\n**Bold**  ";
       const result = sanitize(input);
-      expect(result).toBe("[Link](https://example.com/) \\\\n**Bold**\n");
+      expect(result).toBe("[Link](https://example.com/) &5c;n**Bold**\n");
     });
 
     test("indentation and spacing patterns", () => {
@@ -314,7 +314,7 @@ describe("Weird Parsing Edge Cases", () => {
         "## Version 1.2.3 [2023-12-01]\\n- Fixed [issue #123](https://example.com/issue)";
       const result = sanitize(input);
       expect(result).toBe(
-        "## Version 1.2.3 &5b;2023-12-01&5d;\\n- Fixed [issue #123](https://example.com/issue)\n",
+        "## Version 1.2.3 &5b;2023-12-01&5d;&5c;n- Fixed [issue #123](https://example.com/issue)\n",
       );
     });
 
