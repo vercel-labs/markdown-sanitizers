@@ -10,6 +10,9 @@ import { UrlNormalizer } from "./url-normalizer.js";
 import { HtmlSanitizer } from "./html-sanitizer.js";
 import { SanitizeOptions } from "./types.js";
 
+// Re-export types for convenience
+export type { SanitizeOptions, HtmlSanitizeOptions } from "./types.js";
+
 export class MarkdownSanitizer {
   private options: SanitizeOptions;
   private markdownToHtmlProcessor: any;

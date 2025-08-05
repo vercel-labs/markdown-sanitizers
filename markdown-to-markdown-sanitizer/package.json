@@ -1,10 +1,15 @@
 {
   "name": "markdown-to-markdown-sanitizer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A robust markdown sanitizer that produces unambiguous and sanitized markdown output.",
   "type": "module",
   "main": "dist/index.js",
-  "types": "src/index.ts",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
     "build": "tsc",
     "test": "vitest run",
@@ -15,7 +20,8 @@
     "lint:tests": "eslint tests --ext .ts",
     "check-types": "tsc --noEmit",
     "check-types:tests": "tsc --noEmit -p tsconfig.test.json",
-    "check-types:all": "npm run check-types && npm run check-types:tests"
+    "check-types:all": "pnpm run check-types && pnpm run check-types:tests",
+    "prepublishOnly": "pnpm run build && pnpm test"
   },
   "keywords": [
     "markdown",
