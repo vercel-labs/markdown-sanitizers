@@ -1,31 +1,78 @@
-# Markdown Sanitizer
+# Markdown to Markdown Sanitizer
 
-A robust markdown sanitizer that filters URLs in markdown links and images against a prefix allow-list, with GitHub-compatible HTML sanitization using sanitize-html.
+A robust markdown sanitizer focused on avoiding unexpected image and link URLs in markdown.
+
+This sanitizer consumes markdown and produces markdown output. Generally speaking, this is
+less secure sanitizing the final rendered output such as the generated HTML. Hence, this
+package should only be used when the markdown is rendered by a third-party such as GitHub
+or GitLab.
+
+The primary use-case for this package is to sanitize AI-generated markdown which may have
+been subject to prompt-injection with the goal of exfiltrating data.
+
+Note: The output of the sanitizer is designed to be unambiguous in terms of markdown parsing.
+This comes at the trade-off of reduced human readability of the generated markdown. Hence,
+it is only recommended to use this package when the markdown is meant to be rendered to an
+output format such as HTML, rather than being directly consumed by humans.
+
+## Why is markdown-to-markdown sanitization hard
+
+Markdown parsing substantially differs between implementations. Hence the parsed representation
+that may appear valid with one parser, may not be valid with another.
+
+The way this package tests doing a good job is:
+
+- Tests in `tests/bypass-attempts/*.md`
+- Sanitize with this package
+- Use a range of markdown renderers to turn the sanitized markdown to HTML
+  - `remark`
+  - `marked`
+  - `markdown-it`
+  - `showdown`
+  - `commonmark`
+- Render the HTML output and check if it secure
+
+## How it works
+
+The current implementation is quite involved. Simpler implementations may be possible, but the interleaved
+markdown and HTML nature makes this quite hard.
+
+Current steps:
+
+- Parse input markdown with `remark`
+- Render to HTML
+- Use `DOMPurify` to sanitize the HTML according to the input rules
+- Use `turndown` to re-create the markdown
+- Escape all characters in text that are markdown control characters as HTML-entities
+
+The last step is causing the reduced readability of the output (see trade-off documented above)
+but it leads to avoiding parsing ambiguity. Backslash-based escaping has proven to lead to parsing
+ambiguities between implementations.
 
 ## Features
 
 - **URL Sanitization**: Filters `href` and `src` attributes against configurable prefix allow-lists
-- **HTML Sanitization**: GitHub-compatible HTML sanitization with the same elements and attributes allowed by GitHub
+- **HTML Sanitization**: DOMPurify-based HTML sanitization with GitHub-compatible allow-lists
+- **Entity Encoding**: Aggressive HTML entity encoding for dangerous characters to prevent XSS
 - **Streaming Support**: Robust handling of incomplete markdown streams
-- **Custom Inspection**: Support for custom URL validation functions
-- **Character-by-character Parsing**: Reliable parsing that handles edge cases and malformed markdown
-- **TypeScript Support**: Full TypeScript definitions included
+- **Length Limits**: Configurable maximum markdown length for DoS protection
+- **AI SDK Integration**: Built-in middleware for the Vercel AI SDK
 
 ## Installation
 
 ```bash
-pnpm add markdown-sanitizer
+npm install markdown-to-markdown-sanitizer
 ```
 
 ## Basic Usage
-
-### Markdown-only Sanitization
 
 ```typescript
 import { sanitizeMarkdown } from "markdown-to-markdown-sanitizer";
 
 const options = {
-  allowedPrefixes: ["https://example.com", "https://trusted-site.org"],
+  defaultOrigin: "https://example.com",
+  allowedLinkPrefixes: ["https://example.com", "https://trusted-site.org"],
+  allowedImagePrefixes: ["https://example.com/images"],
 };
 
 const input = `
@@ -33,7 +80,7 @@ const input = `
 
 Check out this [safe link](https://example.com/page) and this [unsafe link](https://malicious.com/page).
 
-![Safe image](https://example.com/image.png)
+![Safe image](https://example.com/images/photo.png)
 ![Unsafe image](https://malicious.com/image.png)
 `;
 
@@ -44,46 +91,8 @@ console.log(sanitized);
 //
 // Check out this [safe link](https://example.com/page) and this [unsafe link](#).
 //
-// ![Safe image](https://example.com/image.png)
+// ![Safe image](https://example.com/images/photo.png)
 // ![Unsafe image]()
-```
-
-### HTML Sanitization
-
-```typescript
-import { sanitizeMarkdown } from "markdown-to-markdown-sanitizer";
-
-const options = {
-  allowedPrefixes: ["https://example.com"],
-  html: {
-    enabled: true,
-  },
-};
-
-const input = `
-# My Document
-
-<div class="content">
-  <p>This is safe HTML with a <a href="https://example.com">safe link</a></p>
-  <script>alert('This will be removed')</script> <!-- Dangerous: removed -->
-  <img src="https://example.com/safe.png" alt="Safe image">
-  <img src="https://malicious.com/bad.png" alt="Unsafe image"> <!-- Bad URL: removed -->
-  
-  <details open>
-    <summary>GitHub-style collapsible section</summary>
-    <p>Content with <kbd>keyboard shortcuts</kbd> and <samp>sample output</samp></p>
-  </details>
-  
-  <table>
-    <tr><th>Feature</th><th>Supported</th></tr>
-    <tr><td>Tables</td><td>✅</td></tr>
-    <tr><td>Scripts</td><td>❌</td></tr>
-  </table>
-</div>
-`;
-
-const sanitized = sanitizeMarkdown(input, options);
-// HTML is sanitized using GitHub's whitelist and URLs are validated
 ```
 
 ## Configuration Options
@@ -92,34 +101,54 @@ const sanitized = sanitizeMarkdown(input, options);
 
 ```typescript
 interface SanitizeOptions {
-  /** Array of allowed URL prefixes */
-  allowedPrefixes: string[];
+  /**
+   * Default origin for relative URLs (e.g., "https://github.com")
+   * Required if your content contains relative URLs that should be allowed.
+   */
+  defaultOrigin: string;
 
-  /** Custom function to inspect href URLs (optional) */
-  inspectHref?: (href: string) => boolean;
+  /** Allowed URL prefixes for links (href attributes) */
+  allowedLinkPrefixes?: string[];
 
-  /** Custom function to inspect src URLs (optional) */
-  inspectSrc?: (src: string) => boolean;
+  /** Allowed URL prefixes for images (src attributes) */
+  allowedImagePrefixes?: string[];
 
-  /** HTML sanitization options (optional) */
-  html?: HtmlSanitizeOptions;
+  /**
+   * Default origin specifically for relative links
+   * (overrides defaultOrigin if set)
+   */
+  defaultLinkOrigin?: string;
+
+  /**
+   * Default origin specifically for relative images
+   * (overrides defaultOrigin if set)
+   */
+  defaultImageOrigin?: string;
+
+  /**
+   * Maximum length of URLs to be sanitized.
+   * Default is 200 characters. 0 means no limit.
+   */
+  urlMaxLength?: number;
+
+  /**
+   * Maximum length of markdown content to process.
+   * Default is 100000 characters. 0 means no limit.
+   */
+  maxMarkdownLength?: number;
 }
 ```
 
-### HtmlSanitizeOptions
+## HTML Sanitization
 
-```typescript
-interface HtmlSanitizeOptions {
-  /** Enable HTML sanitization using sanitize-html */
-  enabled?: boolean;
-}
-```
+The sanitizer uses DOMPurify with GitHub-compatible allow-lists for HTML elements and attributes:
 
-The HTML sanitizer uses a GitHub-compatible configuration that matches GitHub's default HTML allow-list:
+### Allowed HTML Elements
 
 **Text Formatting:**
 
-- `strong`, `b`, `em`, `i`, `code`, `tt`, `s`, `strike`, `del`, `ins`
+- `strong`, `b`, `em`, `i`, `code`, `pre`, `tt`
+- `s`, `strike`, `del`, `ins`, `mark`
 - `sub`, `sup` (subscript and superscript)
 
 **Structure:**
@@ -135,52 +164,56 @@ The HTML sanitizer uses a GitHub-compatible configuration that matches GitHub's 
 
 **Links and Media:**
 
-- `a` (with `href`, `name`, `target`, `title` attributes)
-- `img` (with `src`, `alt`, `title`, `width`, `height` attributes)
+- `a` (with `href`, `name`, `id`, `title`, `target` attributes)
+- `img` (with `src`, `alt`, `title`, `width`, `height`, `align` attributes)
 
 **Code and Technical:**
 
-- `pre`, `samp`, `kbd`, `var` (preformatted text, sample output, keyboard input, variables)
+- `pre`, `code`, `samp`, `kbd`, `var`
 
 **Tables:**
 
 - `table`, `thead`, `tbody`, `tfoot`, `tr`, `td`, `th`
-- Table attributes: `colspan`, `rowspan`, `headers`
+- Table attributes: `colspan`, `rowspan`, `align`, `valign`
 
 **GitHub-Specific:**
 
-- `details`, `summary` (disclosure widgets with `open` attribute)
-- `div`, `span` (with `class`, `id` attributes)
+- `details`, `summary` (with `open` attribute)
+- `div`, `span` (with `class`, `id`, `dir` attributes)
 - `ruby`, `rt`, `rp` (East Asian typography)
 
-**Security Features:**
+### Security Features
 
-- All URLs in `href` and `src` are sanitized using the same prefix rules as markdown links
-- User-generated `id` and `name` attributes get prefixed with `user-content-`
-- Dangerous tags like `script`, `iframe`, `style` are completely removed
-- Maximum nesting depth of 10 levels to prevent abuse
+- **URL Validation**: All URLs in `href` and `src` are validated against allow-lists
+- **ID Prefixing**: User-generated `id` and `name` attributes are prefixed with `user-content-`
+- **Entity Encoding**: Dangerous characters are encoded as HTML entities
+- **XSS Prevention**: Scripts, event handlers, and dangerous elements are removed
 
 ## Advanced Usage
 
-### Custom URL Inspection
+### Streaming API
 
 ```typescript
-const options = {
-  allowedPrefixes: ["https://example.com"],
-  inspectHref: (href: string) => {
-    // Custom validation logic
-    return !href.includes("malicious") && href.length < 200;
-  },
-  inspectSrc: (src: string) => {
-    // Only allow specific image types
-    return /\\.(png|jpg|jpeg|gif|webp)$/i.test(src);
-  },
-};
+import { MarkdownSanitizer } from "markdown-to-markdown-sanitizer";
+
+const sanitizer = new MarkdownSanitizer({
+  defaultOrigin: "https://example.com",
+  allowedLinkPrefixes: ["https://example.com"],
+});
+
+// Stream processing
+let result = "";
+result += sanitizer.write("# Title\n\n[Link](https://exam");
+result += sanitizer.write("ple.com/page) and ");
+result += sanitizer.write("![image](https://example.com/pic.png)");
+result += sanitizer.end(); // Flush remaining buffer
+
+console.log(result);
 ```
 
 ### AI SDK Middleware
 
-The package includes middleware for the AI SDK to automatically sanitize markdown content in AI responses:
+The package includes middleware for the Vercel AI SDK to automatically sanitize markdown content in AI responses:
 
 ```typescript
 import { generateText } from "ai";
@@ -189,25 +222,22 @@ import { markdownSanitizerMiddleware } from "markdown-to-markdown-sanitizer";
 
 const result = await generateText({
   model: openai("gpt-4"),
-  prompt: "Generate a markdown document with links and HTML",
+  prompt: "Generate a markdown document with links",
   experimental_middleware: [
     markdownSanitizerMiddleware({
-      allowedPrefixes: ["https://example.com", "https://trusted.org"],
-      // HTML sanitization is enabled by default
-      enableHtmlSanitization: true,
-      // Optional custom inspection functions
-      inspectHref: (href) => !href.includes("malicious"),
+      defaultOrigin: "https://example.com",
+      allowedLinkPrefixes: ["https://example.com", "https://trusted.org"],
+      allowedImagePrefixes: ["https://example.com/images"],
+      maxMarkdownLength: 50000, // Custom length limit
     }),
   ],
 });
 
-// result.text will have sanitized markdown/HTML content
+// result.text will have sanitized markdown content
 console.log(result.text);
 ```
 
-#### Streaming Support
-
-The middleware also works with streaming:
+#### Streaming with AI SDK
 
 ```typescript
 import { streamText } from "ai";
@@ -217,7 +247,8 @@ const stream = await streamText({
   prompt: "Generate markdown with links",
   experimental_middleware: [
     markdownSanitizerMiddleware({
-      allowedPrefixes: ["https://example.com"],
+      defaultOrigin: "https://example.com",
+      allowedLinkPrefixes: ["https://example.com"],
     }),
   ],
 });
@@ -228,91 +259,113 @@ for await (const chunk of stream.textStream()) {
 }
 ```
 
-### Streaming Usage
+### URL Prefix Configuration
+
+The sanitizer supports flexible URL prefix matching:
 
 ```typescript
-import { MarkdownSanitizer } from "markdown-to-markdown-sanitizer";
+// Protocol-only prefixes
+const options1 = {
+  defaultOrigin: "https://example.com",
+  allowedLinkPrefixes: ["https:", "http:"], // Allow any HTTPS or HTTP URL
+};
 
-const sanitizer = new MarkdownSanitizer({
-  allowedPrefixes: ["https://example.com"],
-  html: { enabled: true },
-});
+// Domain prefixes
+const options2 = {
+  defaultOrigin: "https://example.com",
+  allowedLinkPrefixes: ["https://example.com", "https://api.example.com"],
+};
 
-// Stream processing
-let result = "";
-result += sanitizer.write("# Title\\n\\n[Link](https://exam");
-result += sanitizer.write("ple.com/page) and some ");
-result += sanitizer.write("<strong>HTML</strong>");
-result += sanitizer.end(); // Flush remaining buffer
-
-console.log(result);
+// Path prefixes
+const options3 = {
+  defaultOrigin: "https://example.com",
+  allowedLinkPrefixes: ["https://example.com/docs", "https://example.com/api"],
+};
 ```
 
-## Security Features
+### Length Limits
 
-### URL Sanitization
+Configure maximum markdown length to prevent DoS attacks:
 
-- Validates all `href` and `src` attributes against allow-lists
-- Supports custom inspection functions for advanced validation
-- Replaces invalid `href` with `#` and removes invalid `src` entirely
+```typescript
+const options = {
+  defaultOrigin: "https://example.com",
+  allowedLinkPrefixes: ["https://example.com"],
+  maxMarkdownLength: 50000, // Limit to 50k characters
+  urlMaxLength: 500, // Limit URL length to 500 characters
+};
 
-### HTML Sanitization
+// Content over the limit will be truncated before processing
+const longContent = "a".repeat(60000);
+const result = sanitizeMarkdown(longContent, options);
+// Result will be based on truncated content (first 50k chars)
+```
 
-- Uses sanitize-html with GitHub's exact whitelist of allowed elements and attributes
-- Supports all HTML elements that GitHub allows in markdown (tables, details/summary, kbd/samp, etc.)
-- Removes JavaScript URLs, event handlers, and malicious content
-- Applies URL sanitization to `href` and `src` in sanitized HTML
-- Matches GitHub's behavior including user-content prefixing for anchors
+## Processing Pipeline
 
-### Parsing Robustness
+The sanitizer follows a multi-step pipeline to ensure security:
 
-- Character-by-character parsing handles malformed markdown gracefully
-- Streaming support ensures incomplete constructs are never output
-- Handles nested brackets, escaped characters, and edge cases
+1. **Autolink Normalization**: Converts `<url>` syntax to `[url](url)` and rejects URLs with HTML entities
+2. **Markdown → HTML**: Uses unified/remark to parse markdown and convert to HTML
+3. **HTML Sanitization**: Uses DOMPurify with GitHub-compatible allow-lists
+4. **HTML → Markdown**: Uses Turndown with GFM plugin to convert back to markdown
+5. **Entity Encoding**: Encodes dangerous characters as HTML entities
 
-## Security Best Practices
+## Security Considerations
 
-1. **Always use HTTPS prefixes** in your allow-lists
-2. **Be specific with prefixes** - use full domains rather than partial matches
-3. **Enable HTML sanitization** when processing user-generated content
-4. **Use custom inspection functions** for additional validation logic
-5. **Test with adversarial inputs** to ensure your configuration is secure
+### Best Practices
+
+1. **Always specify `defaultOrigin`** - Required for relative URL handling
+2. **Use HTTPS prefixes** in your allow-lists when possible
+3. **Be specific with prefixes** - Avoid overly broad matches
+4. **Set appropriate length limits** for your use case
+5. **Test with untrusted input** to ensure your configuration is secure
+
+### Entity Encoding
+
+The sanitizer aggressively encodes dangerous characters to prevent XSS:
+
+- Characters encoded: `<>&"'[]:()/!\`
+- Encoding format: `&{hex};` (e.g., `<` becomes `&3c;`)
+- Applied to all text containing dangerous characters
 
 ## Performance
 
-The sanitizer is designed for performance:
-
-- Streaming support for large documents
-- Character-by-character parsing avoids regex catastrophic backtracking
-- sanitize-html is only used when HTML sanitization is enabled
-- Efficient buffering prevents incomplete output in streaming scenarios
+- **Streaming support** for processing large documents efficiently
+- **Configurable length limits** to prevent DoS attacks
+- **Efficient HTML processing** using DOMPurify
+- **Smart buffering** in streaming mode to handle incomplete markdown
 
 ## Testing
 
-The package includes comprehensive tests covering:
+The package includes comprehensive test coverage:
 
-- 143 base tests for markdown sanitization
-- 28 tests for GitHub-compatible HTML sanitization
-- 13 tests for AI SDK middleware
-- Security tests for XSS prevention
-- Performance tests for large documents
-- Edge cases and malformed input handling
+- 847 total tests including:
+  - Core sanitization functionality
+  - HTML sanitization with DOMPurify
+  - Security attack prevention
+  - Edge cases and malformed input
+  - Streaming functionality
+  - AI SDK middleware integration
+  - 555 bypass attempt tests
+
+Run tests:
 
 ```bash
 # Run all tests
 pnpm test
 
-# Run specific test suites
-pnpm test tests/html/
-pnpm test tests/security/
+# Run specific test file
+pnpm test -- tests/basic-sanitization.test.ts
 
-# Run with coverage
-pnpm test --coverage
 ```
 
 ## Dependencies
 
-- **sanitize-html**: HTML sanitization
+- **unified ecosystem**: Markdown parsing and processing
+- **DOMPurify**: HTML sanitization
+- **Turndown**: HTML to Markdown conversion
+- **JSDOM**: DOM implementation for Node.js
 
 ## License
 

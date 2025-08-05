@@ -23,6 +23,8 @@ export interface SanitizeOptions {
   defaultImageOrigin?: string;
   /** Maximum length of URLs to be sanitized. Default is 200 characters. 0 means no limit. */
   urlMaxLength?: number;
+  /** Maximum length of markdown content to process. Default is 100000 characters. 0 means no limit. */
+  maxMarkdownLength?: number;
   /**
    * Default origin for relative URLs (e.g., "https://github.com" or "https://site.com/api")
    * Required if your content contains relative URLs that should be allowed.

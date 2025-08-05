@@ -1,6 +1,6 @@
 import DOMPurify from "dompurify";
 import { JSDOM } from "jsdom";
-import { UrlNormalizer } from "./url-normalizer";
+import { UrlNormalizer } from "./url-normalizer.js";
 
 // Setup DOMPurify with JSDOM
 const window = new JSDOM("").window;

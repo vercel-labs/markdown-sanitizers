@@ -6,9 +6,9 @@ import rehypeStringify from "rehype-stringify";
 import TurndownService from "turndown";
 // @ts-ignore - no types available for turndown-plugin-gfm
 import { gfm } from "turndown-plugin-gfm";
-import { UrlNormalizer } from "./url-normalizer";
-import { HtmlSanitizer } from "./html-sanitizer";
-import { SanitizeOptions } from "./types";
+import { UrlNormalizer } from "./url-normalizer.js";
+import { HtmlSanitizer } from "./html-sanitizer.js";
+import { SanitizeOptions } from "./types.js";
 
 export class MarkdownSanitizer {
   private options: SanitizeOptions;
@@ -74,9 +74,10 @@ export class MarkdownSanitizer {
 
   sanitize(markdown: string): string {
     // DoS protection: limit input size
-    if (markdown.length > 100000) {
-      // 100KB limit - truncate instead of throwing
-      markdown = markdown.substring(0, 100000);
+    const maxLength = this.options.maxMarkdownLength ?? 100000;
+    if (maxLength > 0 && markdown.length > maxLength) {
+      // Truncate instead of throwing
+      markdown = markdown.substring(0, maxLength);
     }
 
     try {
@@ -149,6 +150,8 @@ export interface MarkdownSanitizerMiddlewareOptions
   allowedPrefixes?: string[];
   /** Enable HTML sanitization (default: true) */
   enableHtmlSanitization?: boolean;
+  /** Maximum length of markdown content to process. Default is 100000 characters. 0 means no limit. */
+  maxMarkdownLength?: number;
 }
 
 /**
@@ -182,6 +185,7 @@ export function markdownSanitizerMiddleware(
     defaultOrigin: options.defaultOrigin || "https://example.com",
     defaultLinkOrigin: options.defaultLinkOrigin,
     defaultImageOrigin: options.defaultImageOrigin,
+    maxMarkdownLength: options.maxMarkdownLength,
   };
 
   const sanitizer = new MarkdownSanitizer(sanitizeOptions);
