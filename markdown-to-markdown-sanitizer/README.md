@@ -2,6 +2,9 @@
 
 A robust markdown sanitizer focused on avoiding unexpected image and link URLs in markdown.
 
+Note: This is brand new software and comes without security guarantees. Do your own testing for
+your own use case.
+
 The sanitizer consumes markdown and produces markdown output. Generally speaking, this is
 less secure sanitizing the final rendered output such as the generated HTML. Hence, this
 package should only be used when the markdown is rendered by a third-party such as GitHub
