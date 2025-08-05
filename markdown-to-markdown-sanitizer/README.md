@@ -30,7 +30,7 @@ The way this package tests whether it is doing a good job is:
   - `markdown-it`
   - `showdown`
   - `commonmark`
-- Render the HTML output and check if it secure
+- Render the HTML output and check if it is secure
 
 ## How it works
 
