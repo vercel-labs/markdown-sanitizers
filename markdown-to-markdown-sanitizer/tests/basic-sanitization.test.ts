@@ -114,14 +114,14 @@ Also a bad [link](https://evil.com) and bad ![image](https://evil.com/tracker.gi
     test("handles nested brackets", () => {
       const input = "[[Nested] brackets](https://example.com)";
       const result = sanitize(input);
-      expect(result).toBe("[\\[Nested\\] brackets](https://example.com/)\n");
+      expect(result).toBe("[&5b;Nested&5d; brackets](https://example.com/)\n");
     });
 
     test("handles escaped characters", () => {
       const input = "\\[Not a link\\] and \\![Not an image\\]";
       const result = sanitize(input);
       // Turndown escapes brackets differently than the original implementation
-      expect(result).toBe("\\[Not a link\\] and !\\[Not an image\\]\n");
+      expect(result).toBe("&5b;Not a link&5d; and &21;&5b;Not an image&5d;\n");
     });
   });
 

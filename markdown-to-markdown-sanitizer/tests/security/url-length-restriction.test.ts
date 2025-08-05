@@ -123,7 +123,7 @@ describe("URL Length Restriction", () => {
       const result = sanitize(input);
       // The encoded URL will be longer due to %20 replacements
       // Remark escapes the URL in the output (note the trailing space is not trimmed)
-      expect(result).toBe(`\\[Link\\](https\\://example.com/${spacedPath})\n`);
+      expect(result).toBe(`&5b;Link&5d;&28;https&3a;&2f;&2f;example.com&2f;${spacedPath}&29;\n`);
     });
   });
 

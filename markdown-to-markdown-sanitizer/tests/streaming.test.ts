@@ -246,7 +246,7 @@ describe("Streaming Sanitization", () => {
       const result2 = sanitizer.write("More text\n");
       const final = sanitizer.end();
 
-      expect(result1).toBe("\\[Incomplete link\n");
+      expect(result1).toBe("&5b;Incomplete link\n");
       expect(result2).toBe("More text\n");
       expect(final).toBe("");
     });

@@ -72,13 +72,13 @@ describe("Improved HTML Sanitization", () => {
     test("escapes non-HTML tags", () => {
       const input = 'This looks like HTML: <not-a-real-tag>';
       const result = sanitize(input);
-      expect(result).toBe('This looks like HTML\\:\n');
+      expect(result).toBe('This looks like HTML&3a;\n');
     });
 
     test("escapes custom XML-like tags", () => {
       const input = 'Custom tags: <MyComponent props="value">';
       const result = sanitize(input);
-      expect(result).toBe('Custom tags\\:\n');
+      expect(result).toBe('Custom tags&3a;\n');
     });
 
     test("escapes template placeholders", () => {
@@ -142,13 +142,13 @@ More text with <fake-tag attribute="value">.`;
     test("handles self-closing fake tags", () => {
       const input = 'Self-closing: <my-component />';
       const result = sanitize(input);
-      expect(result).toBe('Self-closing\\:\n');
+      expect(result).toBe('Self-closing&3a;\n');
     });
 
     test("handles malformed HTML-like text", () => {
       const input = 'Malformed: <tag with spaces and no closing>';
       const result = sanitize(input);
-      expect(result).toBe('Malformed\\:\n');
+      expect(result).toBe('Malformed&3a;\n');
     });
 
     test("handles nested angle brackets", () => {

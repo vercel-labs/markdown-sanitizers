@@ -55,7 +55,7 @@ describe("Security Attack Prevention", () => {
       expect(results[0]).toBe("Click\n");
 
       // Second attack gets escaped - the dangerous parts are removed
-      expect(results[1]).toBe("!\\[img\\](data\\:image/svg+xml,)\n");
+      expect(results[1]).toBe("&21;&5b;img&5d;&28;data&3a;image&2f;svg+xml,&29;\n");
 
       // Third attack should be sanitized
       expect(results[2]).toBe("Click\n");
@@ -103,7 +103,7 @@ describe("Security Attack Prevention", () => {
       expect(results[3]).toBe("");
 
       // Encoded attack gets properly escaped
-      expect(results[4]).toBe("\\<\\script\\>alert(\\\"xss\\\")\\</script\\>\n");
+      expect(results[4]).toBe("&3c;script&3e;alert&28;&22;xss&22;&29;&3c;&2f;script&3e;\n");
     });
 
     test("removes iframe injection attempts", () => {
