@@ -1,0 +1,36 @@
+# Source files
+src/
+
+# Tests
+**/*.test.tsx
+**/*.test.ts
+**/*.spec.tsx
+**/*.spec.ts
+
+# Development files
+.gitignore
+tsconfig.json
+vitest.config.mjs
+
+# Documentation (included via files field)
+*.md
+
+# Development dependencies
+node_modules/
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.temp
+.DS_Store
+
+# Build artifacts not needed
+coverage/
+.nyc_output/
+
+# Environment files
+.env*
+
+# Other analysis files
+URL_ANALYSIS.md
