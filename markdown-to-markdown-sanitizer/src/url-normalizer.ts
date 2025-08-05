@@ -1,5 +1,13 @@
 import type { SanitizeOptions } from "./types";
 
+function tryParseUrl(url: string, defaultOrigin?: string): URL | null {
+  try {
+    return new URL(url, defaultOrigin);
+  } catch {
+    return null;
+  }
+}
+
 export class UrlNormalizer {
   private options: SanitizeOptions;
 
@@ -54,7 +62,11 @@ export class UrlNormalizer {
       // Handle full URL prefixes
       const normalizedPrefix = this.normalizeUrl(prefix, defaultOrigin);
       if (!normalizedPrefix) return false;
-      if (new URL(normalizedPrefix).origin !== new URL(normalizedUrl).origin) {
+      const normalizedPrefixUrl = tryParseUrl(normalizedPrefix, defaultOrigin);
+      if (!normalizedPrefixUrl) return false;
+      const normalizedUrlUrl = tryParseUrl(normalizedUrl, defaultOrigin);
+      if (!normalizedUrlUrl) return false;
+      if (normalizedPrefixUrl.origin !== normalizedUrlUrl.origin) {
         return false;
       }
       return normalizedUrl.startsWith(normalizedPrefix);

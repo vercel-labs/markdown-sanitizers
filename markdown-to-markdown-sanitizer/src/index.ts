@@ -42,28 +42,17 @@ export class MarkdownSanitizer {
       linkReferenceStyle: "collapsed",
     });
     const defaultEscape = this.htmlToMarkdownProcessor.escape;
-    this.htmlToMarkdownProcessor.escape = (html: string) => {
-      const escaped = defaultEscape(html);
-      // Turn < into \< and > into \> and = into \= and " into \" and ' into \'
-      // But don't add \ to < or > if they are already escaped.
-      // Additionally turn \<img into \<\img
-
-      let moreEscaped = escaped;
-
-      // Escape special characters that aren't already escaped
-      moreEscaped = moreEscaped.replace(/(?<!\\)</g, "\\<");
-      moreEscaped = moreEscaped.replace(/(?<!\\)>/g, "\\>");
-      moreEscaped = moreEscaped.replace(/(?<!\\)=/g, "\\=");
-      moreEscaped = moreEscaped.replace(/(?<!\\)"/g, '\\"');
-      moreEscaped = moreEscaped.replace(/(?<!\\)'/g, "\\'");
-      moreEscaped = moreEscaped.replace(/(?<!\\)\[/g, "\\[");
-      moreEscaped = moreEscaped.replace(/(?<!\\)\]/g, "\\]");
-      moreEscaped = moreEscaped.replace(/(?<!\\)\:/g, "\\:");
-
-      // Handle special case: turn \<tag into \\<tag for all HTML tags
-      moreEscaped = moreEscaped.replace(/\\<([a-zA-Z]+)/g, "\\<\\$1");
-
-      return moreEscaped;
+    this.htmlToMarkdownProcessor.escape = (str: string) => {
+      const markdownSyntaxCharacters = /[\<\>\&\"\'\[\]\:\=\/\!\(\)]/g;
+      // If anything dangerous is found, encode it using HTML entities which
+      // are supported by markdown.
+      if (markdownSyntaxCharacters.test(str)) {
+        return str.replace(
+          markdownSyntaxCharacters,
+          (char) => `&${char.charCodeAt(0).toString(16)};`
+        );
+      }
+      return defaultEscape(str);
     };
 
     // Add GFM plugin for tables and other GitHub Flavored Markdown features
@@ -83,38 +72,6 @@ export class MarkdownSanitizer {
     this.htmlSanitizer = new HtmlSanitizer(this.urlNormalizer);
   }
 
-  private decodeHtmlEntities(text: string): string {
-    return text
-      .replace(/&#(\d+);/g, (match, dec) => String.fromCharCode(dec))
-      .replace(/&#x([a-f0-9]+);/gi, (match, hex) =>
-        String.fromCharCode(parseInt(hex, 16))
-      )
-      .replace(/&quot;/g, '"')
-      .replace(/&apos;/g, "'")
-      .replace(/&lt;/g, "<")
-      .replace(/&gt;/g, ">")
-      .replace(/&amp;/g, "&"); // Must be last
-  }
-
-  private normalizeAutolinks(markdown: string): string {
-    // Match autolinks and decode entities only within them
-    // Match any protocol scheme: letters, digits, +, -, . followed by ://
-    return markdown.replace(
-      /<([a-z][a-z0-9+.-]*:\/\/[^\s<>]+)>/gi,
-      (match, p1) => {
-        // Decode HTML entities only within the matched autolink URL
-        const decodedUrl = this.decodeHtmlEntities(p1);
-        if (decodedUrl != p1) {
-          return "";
-        }
-        return `[${this.urlNormalizer.sanitizeUrl(
-          decodedUrl,
-          "href"
-        )}](${this.urlNormalizer.sanitizeUrl(decodedUrl, "href")})`;
-      }
-    );
-  }
-
   sanitize(markdown: string): string {
     // DoS protection: limit input size
     if (markdown.length > 100000) {
@@ -123,8 +80,6 @@ export class MarkdownSanitizer {
     }
 
     try {
-      markdown = this.normalizeAutolinks(markdown);
-
       // Step 1: Parse markdown and convert to HTML using remark
       const html = String(this.markdownToHtmlProcessor.processSync(markdown));
 
