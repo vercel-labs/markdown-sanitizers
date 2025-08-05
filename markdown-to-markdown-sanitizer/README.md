@@ -6,7 +6,7 @@ Note: This is brand new software and comes without security guarantees. Do your 
 your own use case.
 
 The sanitizer consumes markdown and produces markdown output. Generally speaking, this is
-less secure sanitizing the final rendered output such as the generated HTML. Hence, this
+less secure than sanitizing the final rendered output such as the generated HTML. Hence, this
 package should only be used when the markdown is rendered by a third-party such as GitHub
 or GitLab.
 
