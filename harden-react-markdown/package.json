@@ -1,6 +1,6 @@
 {
   "name": "harden-react-markdown",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "A security-focused wrapper for react-markdown that filters URLs based on allowed prefixes",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
