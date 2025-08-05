@@ -12,7 +12,6 @@ import { SanitizeOptions } from "./types.js";
 
 export class MarkdownSanitizer {
   private options: SanitizeOptions;
-  private buffer: string = "";
   private markdownToHtmlProcessor: any;
   private htmlToMarkdownProcessor: TurndownService;
   private urlNormalizer: UrlNormalizer;
@@ -102,36 +101,6 @@ export class MarkdownSanitizer {
       return "";
     }
   }
-
-  // Streaming support - processes chunks but ensures completeness
-  write(chunk: string): string {
-    this.buffer += chunk;
-
-    // Find the last complete line to process
-    const lastNewlineIndex = this.buffer.lastIndexOf("\n");
-
-    if (lastNewlineIndex === -1) {
-      // No complete lines yet, return empty
-      return "";
-    }
-
-    // Process complete lines only
-    const toProcess = this.buffer.substring(0, lastNewlineIndex + 1);
-    this.buffer = this.buffer.substring(lastNewlineIndex + 1);
-
-    return this.sanitize(toProcess);
-  }
-
-  // Flush any remaining buffer
-  end(): string {
-    if (!this.buffer.trim()) {
-      return "";
-    }
-
-    const result = this.sanitize(this.buffer);
-    this.buffer = "";
-    return result;
-  }
 }
 
 // Convenience function for one-shot sanitization
@@ -143,118 +112,3 @@ export function sanitizeMarkdown(
   return sanitizer.sanitize(markdown);
 }
 
-// AI SDK Middleware
-export interface MarkdownSanitizerMiddlewareOptions
-  extends Partial<Omit<SanitizeOptions, "html">> {
-  /** @deprecated Use allowedLinkPrefixes instead */
-  allowedPrefixes?: string[];
-  /** Enable HTML sanitization (default: true) */
-  enableHtmlSanitization?: boolean;
-  /** Maximum length of markdown content to process. Default is 100000 characters. 0 means no limit. */
-  maxMarkdownLength?: number;
-}
-
-/**
- * AI SDK middleware that sanitizes markdown content in AI responses
- *
- * @param options Configuration options for markdown sanitization
- * @returns Middleware function for AI SDK
- *
- * @example
- * ```typescript
- * import { markdownSanitizerMiddleware } from 'markdown-sanitizer';
- *
- * const result = await generateText({
- *   model: openai('gpt-4'),
- *   prompt: 'Generate some markdown with links',
- *   experimental_middleware: [
- *     markdownSanitizerMiddleware({
- *       allowedPrefixes: ['https://example.com', 'https://trusted.org']
- *     })
- *   ]
- * });
- * ```
- */
-export function markdownSanitizerMiddleware(
-  options: MarkdownSanitizerMiddlewareOptions
-) {
-  const sanitizeOptions: SanitizeOptions = {
-    allowedLinkPrefixes: options.allowedLinkPrefixes || options.allowedPrefixes,
-    allowedImagePrefixes:
-      options.allowedImagePrefixes || options.allowedPrefixes,
-    defaultOrigin: options.defaultOrigin || "https://example.com",
-    defaultLinkOrigin: options.defaultLinkOrigin,
-    defaultImageOrigin: options.defaultImageOrigin,
-    maxMarkdownLength: options.maxMarkdownLength,
-  };
-
-  const sanitizer = new MarkdownSanitizer(sanitizeOptions);
-
-  return {
-    wrapGenerate: async (
-      params: unknown,
-      generate: (...args: unknown[]) => Promise<unknown>
-    ) => {
-      const result = (await generate(params)) as Record<string, unknown>;
-
-      // Sanitize text content if present
-      if (result.text && typeof result.text === "string") {
-        result.text = sanitizer.sanitize(result.text);
-      }
-
-      // Sanitize response messages if present
-      if (
-        result.response &&
-        typeof result.response === "object" &&
-        result.response !== null
-      ) {
-        const response = result.response as Record<string, unknown>;
-        if (Array.isArray(response.messages)) {
-          response.messages = response.messages.map(
-            (message: Record<string, unknown>) => {
-              if (message.content && typeof message.content === "string") {
-                return {
-                  ...message,
-                  content: sanitizer.sanitize(message.content),
-                };
-              }
-              return message;
-            }
-          );
-        }
-      }
-
-      return result;
-    },
-
-    wrapStream: async (
-      params: unknown,
-      stream: (...args: unknown[]) => Promise<unknown>
-    ) => {
-      const wrappedStream = (await stream(params)) as Record<string, unknown>;
-
-      return {
-        ...wrappedStream,
-        async *textStream() {
-          const streamingSanitizer = new MarkdownSanitizer(sanitizeOptions);
-          const originalTextStream =
-            wrappedStream.textStream as () => AsyncGenerator<string>;
-
-          for await (const chunk of originalTextStream()) {
-            // Use the streaming API to safely handle partial markdown
-            const sanitizedChunk = streamingSanitizer.write(chunk);
-            if (sanitizedChunk) {
-              yield sanitizedChunk;
-            }
-          }
-
-          // Flush any remaining content
-          const finalChunk = streamingSanitizer.end();
-          if (finalChunk) {
-            yield finalChunk;
-          }
-        },
-      };
-    },
-  };
-}

@@ -29,7 +29,7 @@ The sanitizer follows this flow:
 
 - **URL Validation**: Comprehensive prefix matching with support for protocol-only prefixes
 - **HTML Entity Escaping**: Aggressive character-to-entity conversion for dangerous characters
-- **Streaming Support**: Safe processing of incomplete markdown chunks
+- **Length Limits**: Configurable maximum markdown length for DoS protection
 
 ## Development Commands
 
@@ -74,16 +74,16 @@ pnpm run lint:tests
 
 ### Test Structure
 
-- `tests/bypass-attempts/`: 99 adversarial markdown files testing security bypasses
+- `tests/bypass-attempts/`: 111 adversarial markdown files testing security bypasses
 - `tests/bypass-attempts.test.ts`: Runs all bypass attempts against 5 different markdown parsers
 - `tests/basic-sanitization.test.ts`: Core functionality tests
 - `tests/html-sanitization.test.ts`: HTML sanitization tests
 - `tests/security-attacks.test.ts`: XSS prevention tests
-- `tests/ai-sdk-middleware.test.ts`: AI SDK integration tests
+- `tests/max-length-config.test.ts`: Maximum length configuration tests
 
 ### Security Testing
 
-The codebase includes extensive security testing with 99 bypass attempt files that test various attack vectors:
+The codebase includes extensive security testing with 111 bypass attempt files that test various attack vectors:
 
 - Protocol smuggling and confusion
 - Unicode normalization attacks
@@ -151,17 +151,14 @@ This is applied to strings containing: `<>&"'[]:()/!()`
 ### URL Length Limits
 
 - `urlMaxLength`: Default 200 characters, set to 0 for no limit
-
-## AI SDK Integration
-
-The package includes middleware for the AI SDK that automatically sanitizes markdown content in AI responses, supporting both `generateText` and `streamText` functions.
+- `maxMarkdownLength`: Default 100000 characters, set to 0 for no limit
 
 ## Performance Considerations
 
-- Streaming support prevents memory issues with large documents
+- Configurable length limits prevent memory issues with large documents
 - Character-by-character parsing avoids regex catastrophic backtracking
 - HTML sanitization only runs when needed
-- Efficient buffering in streaming mode
+- Efficient markdown-to-HTML-to-markdown pipeline
 
 ## Security Best Practices
 

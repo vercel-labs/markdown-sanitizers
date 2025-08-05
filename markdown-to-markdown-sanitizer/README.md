@@ -54,9 +54,8 @@ ambiguities between implementations.
 - **URL Sanitization**: Filters `href` and `src` attributes against configurable prefix allow-lists
 - **HTML Sanitization**: DOMPurify-based HTML sanitization with GitHub-compatible allow-lists
 - **Entity Encoding**: Aggressive HTML entity encoding for dangerous characters to prevent XSS
-- **Streaming Support**: Robust handling of incomplete markdown streams
 - **Length Limits**: Configurable maximum markdown length for DoS protection
-- **AI SDK Integration**: Built-in middleware for the Vercel AI SDK
+- **TypeScript Support**: Full TypeScript definitions included
 
 ## Installation
 
@@ -191,74 +190,6 @@ The sanitizer uses DOMPurify with GitHub-compatible allow-lists for HTML element
 
 ## Advanced Usage
 
-### Streaming API
-
-```typescript
-import { MarkdownSanitizer } from "markdown-to-markdown-sanitizer";
-
-const sanitizer = new MarkdownSanitizer({
-  defaultOrigin: "https://example.com",
-  allowedLinkPrefixes: ["https://example.com"],
-});
-
-// Stream processing
-let result = "";
-result += sanitizer.write("# Title\n\n[Link](https://exam");
-result += sanitizer.write("ple.com/page) and ");
-result += sanitizer.write("![image](https://example.com/pic.png)");
-result += sanitizer.end(); // Flush remaining buffer
-
-console.log(result);
-```
-
-### AI SDK Middleware
-
-The package includes middleware for the Vercel AI SDK to automatically sanitize markdown content in AI responses:
-
-```typescript
-import { generateText } from "ai";
-import { openai } from "@ai-sdk/openai";
-import { markdownSanitizerMiddleware } from "markdown-to-markdown-sanitizer";
-
-const result = await generateText({
-  model: openai("gpt-4"),
-  prompt: "Generate a markdown document with links",
-  experimental_middleware: [
-    markdownSanitizerMiddleware({
-      defaultOrigin: "https://example.com",
-      allowedLinkPrefixes: ["https://example.com", "https://trusted.org"],
-      allowedImagePrefixes: ["https://example.com/images"],
-      maxMarkdownLength: 50000, // Custom length limit
-    }),
-  ],
-});
-
-// result.text will have sanitized markdown content
-console.log(result.text);
-```
-
-#### Streaming with AI SDK
-
-```typescript
-import { streamText } from "ai";
-
-const stream = await streamText({
-  model: openai("gpt-4"),
-  prompt: "Generate markdown with links",
-  experimental_middleware: [
-    markdownSanitizerMiddleware({
-      defaultOrigin: "https://example.com",
-      allowedLinkPrefixes: ["https://example.com"],
-    }),
-  ],
-});
-
-for await (const chunk of stream.textStream()) {
-  // Each chunk is sanitized before being yielded
-  process.stdout.write(chunk);
-}
-```
-
 ### URL Prefix Configuration
 
 The sanitizer supports flexible URL prefix matching:
@@ -331,22 +262,20 @@ The sanitizer aggressively encodes dangerous characters to prevent XSS:
 
 ## Performance
 
-- **Streaming support** for processing large documents efficiently
 - **Configurable length limits** to prevent DoS attacks
 - **Efficient HTML processing** using DOMPurify
-- **Smart buffering** in streaming mode to handle incomplete markdown
+- **Optimized markdown parsing** using unified ecosystem
 
 ## Testing
 
 The package includes comprehensive test coverage:
 
-- 847 total tests including:
+- 800+ total tests including:
   - Core sanitization functionality
   - HTML sanitization with DOMPurify
   - Security attack prevention
   - Edge cases and malformed input
-  - Streaming functionality
-  - AI SDK middleware integration
+  - Length limit configuration
   - 555 bypass attempt tests
 
 Run tests:

@@ -220,19 +220,4 @@ describe("URL Length Restriction", () => {
     });
   });
 
-  describe("Multiple URL length limits in streaming", () => {
-    test("handles URL length limits in streaming mode", () => {
-      const sanitizer = createSanitizer({ urlMaxLength: 100 });
-
-      const longPath = "a".repeat(101 - "https://example.com/".length);
-      let result = "";
-
-      result += sanitizer.write(`[Link1](https://example.com/short)\n`);
-      result += sanitizer.write(`[Link2](https://example.com/${longPath})\n`);
-      result += sanitizer.end();
-
-      expect(result).toContain("[Link1](https://example.com/short)");
-      expect(result).toContain("[Link2](#)");
-    });
-  });
 });

@@ -82,23 +82,6 @@ describe("maxMarkdownLength configuration", () => {
     expect(result).toContain("Link text");
   });
 
-  it("should work with streaming API and length limits", () => {
-    const sanitizer = new MarkdownSanitizer({
-      ...baseOptions,
-      maxMarkdownLength: 100,
-    });
-    
-    const chunk1 = "a".repeat(50);
-    const chunk2 = "b".repeat(60); // Total would be 110, over limit
-    
-    const result1 = sanitizer.write(chunk1 + "\n");
-    const result2 = sanitizer.write(chunk2 + "\n");
-    const finalResult = sanitizer.end();
-    
-    // The write method processes complete lines, so length limit is applied per sanitize() call
-    expect(result1.length).toBe(51); // 50 + newline
-    expect(result2.length).toBe(61); // 60 + newline (each line processed separately)
-  });
 
   it("should handle length limit with mixed content", () => {
     const sanitizer = new MarkdownSanitizer({
