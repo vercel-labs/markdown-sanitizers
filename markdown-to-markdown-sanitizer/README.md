@@ -10,8 +10,8 @@ less secure than sanitizing the final rendered output such as the generated HTML
 package should only be used when the markdown is rendered by a third-party such as GitHub
 or GitLab.
 
-The primary use-case for this package is to sanitize AI-generated markdown which may have
-been subject to prompt-injection with the goal of exfiltrating data.
+The primary use-case for this package is to [sanitize AI-generated markdown which may have
+been subject to prompt-injection with the goal of exfiltrating data](https://vercel.com/blog/building-secure-ai-agents).
 
 Note: The output of the sanitizer is designed to be unambiguous in terms of markdown parsing.
 This comes at the trade-off of reduced human readability of the generated markdown. Hence,
