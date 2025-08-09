@@ -15,7 +15,6 @@ describe("Markdown Sanitizer Bypass Attempts", () => {
     "https://example.com/",
     "https://trusted.org/",
     "https://images.com/",
-    "https://safe.com/",
   ];
   const createSanitizer = (options = {}) =>
     new MarkdownSanitizer({
