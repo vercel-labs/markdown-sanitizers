@@ -45,13 +45,13 @@ export class MarkdownSanitizer {
     });
     const defaultEscape = this.htmlToMarkdownProcessor.escape;
     this.htmlToMarkdownProcessor.escape = (str: string) => {
-      const markdownSyntaxCharacters = /[\<\>\&\"\'\[\]\:\=\/\!\(\)\\]/g;
+      const markdownSyntaxCharacters = /[\<\>\&\"\'\[\]\:\=\/\!\(\)\\\@]/g;
       // If anything dangerous is found, encode it using HTML entities which
       // are supported by markdown.
       if (markdownSyntaxCharacters.test(str)) {
         return str.replace(
           markdownSyntaxCharacters,
-          (char) => `&${char.charCodeAt(0).toString(16)};`
+          (char) => `&${char.charCodeAt(0).toString(16)};`,
         );
       }
       return defaultEscape(str);
@@ -109,7 +109,7 @@ export class MarkdownSanitizer {
 // Convenience function for one-shot sanitization
 export function sanitizeMarkdown(
   markdown: string,
-  options: SanitizeOptions
+  options: SanitizeOptions,
 ): string {
   const sanitizer = new MarkdownSanitizer(options);
   return sanitizer.sanitize(markdown);

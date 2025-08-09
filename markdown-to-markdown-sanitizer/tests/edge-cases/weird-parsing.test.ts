@@ -18,13 +18,17 @@ describe("Weird Parsing Edge Cases", () => {
     test("text that could be interpreted multiple ways", () => {
       const input = "Price: $[100] or *special* offer: 50% off!";
       const result = sanitize(input);
-      expect(result).toBe("Price&3a; $&5b;100&5d; or *special* offer&3a; 50% off&21;\n");
+      expect(result).toBe(
+        "Price&3a; $&5b;100&5d; or *special* offer&3a; 50% off&21;\n",
+      );
     });
 
     test("URL-like text that is not a link", () => {
       const input = "Visit https://example.com or call 555-1234";
       const result = sanitize(input);
-      expect(result).toBe("Visit https&3a;&2f;&2f;example.com or call 555-1234\n");
+      expect(result).toBe(
+        "Visit https&3a;&2f;&2f;example.com or call 555-1234\n",
+      );
     });
 
     test("emphasis markers in unexpected contexts", () => {
@@ -37,7 +41,7 @@ describe("Weird Parsing Edge Cases", () => {
       const input = 'Use document.getElementById("test") to get element';
       const result = sanitize(input);
       expect(result).toBe(
-        'Use document.getElementById&28;&22;test&22;&29; to get element\n',
+        "Use document.getElementById&28;&22;test&22;&29; to get element\n",
       );
     });
   });
@@ -55,7 +59,9 @@ describe("Weird Parsing Edge Cases", () => {
     test("empty link text and URLs", () => {
       const input = "[](https://example.com) and [text]()";
       const result = sanitize(input);
-      expect(result).toBe("[](https://example.com/)and [text](https://example.com/)\n");
+      expect(result).toBe(
+        "[](https://example.com/)and [text](https://example.com/)\n",
+      );
     });
 
     test("single character elements", () => {
@@ -143,14 +149,16 @@ describe("Weird Parsing Edge Cases", () => {
       const input = 'Use getElementById("test") or querySelector("[data-id]")';
       const result = sanitize(input);
       expect(result).toBe(
-        'Use getElementById&28;&22;test&22;&29; or querySelector&28;&22;&5b;data-id&5d;&22;&29;\n',
+        "Use getElementById&28;&22;test&22;&29; or querySelector&28;&22;&5b;data-id&5d;&22;&29;\n",
       );
     });
 
     test("regex patterns with markdown-like characters", () => {
       const input = "Pattern: /[a-z]*\\d+/ matches text";
       const result = sanitize(input);
-      expect(result).toBe("Pattern&3a; &2f;&5b;a-z&5d;*&5c;d+&2f; matches text\n");
+      expect(result).toBe(
+        "Pattern&3a; &2f;&5b;a-z&5d;*&5c;d+&2f; matches text\n",
+      );
     });
 
     test("file paths with brackets and special chars", () => {
@@ -166,7 +174,7 @@ describe("Weird Parsing Edge Cases", () => {
   describe("Nested quotation and citation patterns", () => {
     test("multiple quote levels", () => {
       const input =
-        "He said \"She said &27;[link](https://example.com)&27; was good\"";
+        'He said "She said &27;[link](https://example.com)&27; was good"';
       const result = sanitize(input);
       expect(result).toBe(
         "He said &22;She said &26;27;[link](https://example.com/)&26;27; was good&22;\n",
@@ -249,7 +257,7 @@ describe("Weird Parsing Edge Cases", () => {
         "Follow @user or check #hashtag with [link](https://example.com)";
       const result = sanitize(input);
       expect(result).toBe(
-        "Follow @user or check #hashtag with [link](https://example.com/)\n",
+        "Follow &40;user or check #hashtag with [link](https://example.com/)\n",
       );
     });
 
@@ -258,7 +266,7 @@ describe("Weird Parsing Edge Cases", () => {
         "Contact user@example.com or [support](https://example.com/contact)";
       const result = sanitize(input);
       expect(result).toBe(
-        "Contact user@example.com or [support](https://example.com/contact)\n",
+        "Contact user&40;example.com or [support](https://example.com/contact)\n",
       );
     });
 
@@ -322,7 +330,7 @@ describe("Weird Parsing Edge Cases", () => {
         'Config: {key: "value"} or [JSON](https://example.com) **important** note&21;';
       const result = sanitize(input);
       expect(result).toBe(
-        'Config&3a; {key&3a; &22;value&22;} or [JSON](https://example.com/) **important** note&26;21;\n',
+        "Config&3a; {key&3a; &22;value&22;} or [JSON](https://example.com/) **important** note&26;21;\n",
       );
     });
   });

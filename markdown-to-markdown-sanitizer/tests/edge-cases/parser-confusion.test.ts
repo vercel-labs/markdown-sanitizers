@@ -250,7 +250,7 @@ describe("Parser Confusion Tests", () => {
         "<div>Price: $[100](https://example.com) and *special* chars: @#%</div>";
       const result = sanitize(input);
       expect(result).toBe(
-        "Price&3a; $&5b;100&5d;&28;https&3a;&2f;&2f;example.com&29; and *special* chars&3a; @#%\n",
+        "Price&3a; $&5b;100&5d;&28;https&3a;&2f;&2f;example.com&29; and *special* chars&3a; &40;#%\n",
       );
     });
   });
