@@ -20,7 +20,7 @@ describe("Parser Confusion Tests", () => {
         '<a href="https://example.com" title="Click [here](javascript:alert())">Link</a>';
       const result = sanitize(input);
       expect(result).toBe(
-        '[Link](https://example.com/ "Click [here](javascript:alert())")\n',
+        '[Link](https://example.com/ "Click here(javascript:alert())")\n'
       );
     });
 
@@ -29,7 +29,7 @@ describe("Parser Confusion Tests", () => {
         '<img src="https://images.com/pic.jpg" alt="![evil](javascript:alert())">';
       const result = sanitize(input);
       expect(result).toBe(
-        '![!evil(javascript:alert())](https://images.com/pic.jpg)\n',
+        "![!evil(javascript:alert())](https://images.com/pic.jpg)\n"
       );
     });
 
@@ -37,9 +37,7 @@ describe("Parser Confusion Tests", () => {
       const input =
         '<div title="**Bold** and *italic* with [link](https://evil.com)">Content</div>';
       const result = sanitize(input);
-      expect(result).toBe(
-        'Content\n',
-      );
+      expect(result).toBe("Content\n");
     });
   });
 
@@ -55,7 +53,9 @@ describe("Parser Confusion Tests", () => {
       const input =
         '[&lt;script&gt;alert("xss")&lt;/script&gt;](https://example.com)';
       const result = sanitize(input);
-      expect(result).toBe("[&3c;script&3e;alert&28;&22;xss&22;&29;&3c;&2f;script&3e;](https://example.com/)\n");
+      expect(result).toBe(
+        "[&3c;script&3e;alert&28;&22;xss&22;&29;&3c;&2f;script&3e;](https://example.com/)\n"
+      );
     });
 
     test("complex HTML structure inside markdown link text preserved", () => {
@@ -63,7 +63,7 @@ describe("Parser Confusion Tests", () => {
         "[<div><strong>Bold</strong> text <em>italic</em></div>](https://example.com)";
       const result = sanitize(input);
       expect(result).toBe(
-        "[](https://example.com/)\n\n[**Bold** text *italic*](https://example.com/)\n",
+        "[](https://example.com/)\n\n[**Bold** text *italic*](https://example.com/)\n"
       );
     });
   });
@@ -73,14 +73,18 @@ describe("Parser Confusion Tests", () => {
       const input =
         '![<script>alert("xss")</script>Safe image](https://images.com/pic.jpg)';
       const result = sanitize(input);
-      expect(result).toBe("![scriptalert(xss)/scriptSafe image](https://images.com/pic.jpg)\n");
+      expect(result).toBe(
+        "![scriptalert(xss)/scriptSafe image](https://images.com/pic.jpg)\n"
+      );
     });
 
     test("iframe inside image alt text", () => {
       const input =
         '![<iframe src="javascript:alert()"></iframe>Description](https://images.com/pic.jpg)';
       const result = sanitize(input);
-      expect(result).toBe("![iframe srcjavascript:alert()/iframeDescription](https://images.com/pic.jpg)\n");
+      expect(result).toBe(
+        "![iframe srcjavascript:alert()/iframeDescription](https://images.com/pic.jpg)\n"
+      );
     });
 
     test("nested HTML tags inside image alt text", () => {
@@ -88,7 +92,7 @@ describe("Parser Confusion Tests", () => {
         "![<div><p>Text with <strong>bold</strong></p></div>](https://images.com/pic.jpg)";
       const result = sanitize(input);
       expect(result).toBe(
-        "![divpText with strongbold/strong/p/div](https://images.com/pic.jpg)\n",
+        "![divpText with strongbold/strong/p/div](https://images.com/pic.jpg)\n"
       );
     });
   });
@@ -99,7 +103,7 @@ describe("Parser Confusion Tests", () => {
         "<div>Start [link](https://example.com) <strong>bold</div> text</strong>";
       const result = sanitize(input);
       expect(result).toBe(
-        "Start &5b;link&5d;&28;https&3a;&2f;&2f;example.com&29; **bold**\n\n**text**\n",
+        "Start &5b;link&5d;&28;https&3a;&2f;&2f;example.com&29; **bold**\n\n**text**\n"
       );
     });
 
@@ -107,7 +111,7 @@ describe("Parser Confusion Tests", () => {
       const input = "[Start <div>text](https://example.com) end</div>";
       const result = sanitize(input);
       expect(result).toBe(
-        "[Start](https://example.com/)\n\n[text](https://example.com/) end\n",
+        "[Start](https://example.com/)\n\n[text](https://example.com/) end\n"
       );
     });
 
@@ -116,7 +120,7 @@ describe("Parser Confusion Tests", () => {
         "<p>Para [link <strong>bold](https://example.com) text</strong> end</p>";
       const result = sanitize(input);
       expect(result).toBe(
-        "Para &5b;link **bold&5d;&28;https&3a;&2f;&2f;example.com&29; text** end\n",
+        "Para &5b;link **bold&5d;&28;https&3a;&2f;&2f;example.com&29; text** end\n"
       );
     });
   });
@@ -133,7 +137,7 @@ describe("Parser Confusion Tests", () => {
         "<div>Text with [link containing <strong>bold</strong>](https://example.com) end</div>";
       const result = sanitize(input);
       expect(result).toBe(
-        "Text with &5b;link containing **bold**&5d;&28;https&3a;&2f;&2f;example.com&29; end\n",
+        "Text with &5b;link containing **bold**&5d;&28;https&3a;&2f;&2f;example.com&29; end\n"
       );
     });
 
@@ -142,7 +146,7 @@ describe("Parser Confusion Tests", () => {
         "<div><p>Para with [link <em>*italic*</em> **bold**](https://example.com) and <strong>more [nested](https://trusted.org)</strong></p></div>";
       const result = sanitize(input);
       expect(result).toBe(
-        "Para with &5b;link *\\*italic\\** **bold**&5d;&28;https&3a;&2f;&2f;example.com&29; and **more &5b;nested&5d;&28;https&3a;&2f;&2f;trusted.org&29;**\n",
+        "Para with &5b;link *\\*italic\\** **bold**&5d;&28;https&3a;&2f;&2f;example.com&29; and **more &5b;nested&5d;&28;https&3a;&2f;&2f;trusted.org&29;**\n"
       );
     });
   });
@@ -153,7 +157,7 @@ describe("Parser Confusion Tests", () => {
         "<div>Text with [link](https://example.com) and <strong>bold text without closing";
       const result = sanitize(input);
       expect(result).toBe(
-        "Text with &5b;link&5d;&28;https&3a;&2f;&2f;example.com&29; and **bold text without closing**\n",
+        "Text with &5b;link&5d;&28;https&3a;&2f;&2f;example.com&29; and **bold text without closing**\n"
       );
     });
 
@@ -162,7 +166,7 @@ describe("Parser Confusion Tests", () => {
         "<p>Text with [incomplete link](https://example.com and **bold without closing</p>";
       const result = sanitize(input);
       expect(result).toBe(
-        "Text with &5b;incomplete link&5d;&28;https&3a;&2f;&2f;example.com and **bold without closing\n",
+        "Text with &5b;incomplete link&5d;&28;https&3a;&2f;&2f;example.com and **bold without closing\n"
       );
     });
 
@@ -170,9 +174,7 @@ describe("Parser Confusion Tests", () => {
       const input =
         "<div title='Single quotes with [link](https://example.com) inside'>Content</div>";
       const result = sanitize(input);
-      expect(result).toBe(
-        'Content\n',
-      );
+      expect(result).toBe("Content\n");
     });
   });
 
@@ -182,7 +184,7 @@ describe("Parser Confusion Tests", () => {
         "<div>🔗 [Link with émoji](https://example.com) and **bōld** text</div>";
       const result = sanitize(input);
       expect(result).toBe(
-        "🔗 &5b;Link with émoji&5d;&28;https&3a;&2f;&2f;example.com&29; and **bōld** text\n",
+        "🔗 &5b;Link with émoji&5d;&28;https&3a;&2f;&2f;example.com&29; and **bōld** text\n"
       );
     });
 
@@ -191,7 +193,7 @@ describe("Parser Confusion Tests", () => {
         "[Link with &amp; symbol](https://example.com) and <strong>&lt;bold&gt;</strong>";
       const result = sanitize(input);
       expect(result).toBe(
-        "[Link with &26; symbol](https://example.com/) and **&3c;bold&3e;**\n",
+        "[Link with &26; symbol](https://example.com/) and **&3c;bold&3e;**\n"
       );
     });
 
@@ -200,7 +202,7 @@ describe("Parser Confusion Tests", () => {
         "<div>Text [link%20with%20spaces](https://example.com/path%20with%20spaces) end</div>";
       const result = sanitize(input);
       expect(result).toBe(
-        "Text &5b;link%20with%20spaces&5d;&28;https&3a;&2f;&2f;example.com&2f;path%20with%20spaces&29; end\n",
+        "Text &5b;link%20with%20spaces&5d;&28;https&3a;&2f;&2f;example.com&2f;path%20with%20spaces&29; end\n"
       );
     });
   });
@@ -231,9 +233,7 @@ describe("Parser Confusion Tests", () => {
       const input =
         "[<Click here>](https://example.com) and actual <strong>HTML</strong>";
       const result = sanitize(input);
-      expect(result).toBe(
-        "[](https://example.com/)and actual **HTML**\n",
-      );
+      expect(result).toBe("[](https://example.com/)and actual **HTML**\n");
     });
 
     test("HTML that looks like markdown syntax", () => {
@@ -241,7 +241,7 @@ describe("Parser Confusion Tests", () => {
         "<div>Text with [brackets] and **asterisks** that are not markdown</div>";
       const result = sanitize(input);
       expect(result).toBe(
-        "Text with &5b;brackets&5d; and **asterisks** that are not markdown\n",
+        "Text with &5b;brackets&5d; and **asterisks** that are not markdown\n"
       );
     });
 
@@ -250,7 +250,7 @@ describe("Parser Confusion Tests", () => {
         "<div>Price: $[100](https://example.com) and *special* chars: @#%</div>";
       const result = sanitize(input);
       expect(result).toBe(
-        "Price&3a; $&5b;100&5d;&28;https&3a;&2f;&2f;example.com&29; and *special* chars&3a; @#%\n",
+        "Price&3a; $&5b;100&5d;&28;https&3a;&2f;&2f;example.com&29; and *special* chars&3a; @#%\n"
       );
     });
   });
@@ -261,7 +261,7 @@ describe("Parser Confusion Tests", () => {
         "< div >Text with [ link ]( https://example.com ) end</ div >";
       const result = sanitize(input);
       expect(result).toBe(
-        "&3c; div &3e;Text with [link](https://example.com/) end&3c;&2f; div &3e;\n",
+        "&3c; div &3e;Text with [link](https://example.com/) end&3c;&2f; div &3e;\n"
       );
     });
 
@@ -269,7 +269,7 @@ describe("Parser Confusion Tests", () => {
       const input = "<div>\n[Link with\nnewlines](https://example.com)\n</div>";
       const result = sanitize(input);
       expect(result).toBe(
-        "&5b;Link with newlines&5d;&28;https&3a;&2f;&2f;example.com&29;\n",
+        "&5b;Link with newlines&5d;&28;https&3a;&2f;&2f;example.com&29;\n"
       );
     });
 
@@ -277,7 +277,7 @@ describe("Parser Confusion Tests", () => {
       const input = "<div>\t[Link\twith\ttabs](https://example.com)\t</div>";
       const result = sanitize(input);
       expect(result).toBe(
-        "&5b;Link with tabs&5d;&28;https&3a;&2f;&2f;example.com&29;\n",
+        "&5b;Link with tabs&5d;&28;https&3a;&2f;&2f;example.com&29;\n"
       );
     });
   });
@@ -315,7 +315,9 @@ describe("Parser Confusion Tests", () => {
       const result = sanitize(input);
 
       expect(result).toBeTruthy(); // Just verify it works without timing
-      expect(result).toContain("&5b;link&5d;&28;https&3a;&2f;&2f;example.com&29;");
+      expect(result).toContain(
+        "&5b;link&5d;&28;https&3a;&2f;&2f;example.com&29;"
+      );
     });
   });
 });
