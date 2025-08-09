@@ -192,10 +192,22 @@ describe("Markdown Sanitizer Bypass Attempts", () => {
     const bypassDir = path.join(__dirname, "bypass-attempts");
 
     // Read all markdown files from bypass-attempts directory
-    const files = fs
+    let files = fs
       .readdirSync(bypassDir)
       .filter((file) => file.endsWith(".md"))
       .sort();
+
+    // If SINGLE_BYPASS_FILE is set, only run that specific file
+    const singleFile = process.env.SINGLE_BYPASS_FILE;
+    if (singleFile) {
+      const targetFile = singleFile.endsWith('.md') ? singleFile : `${singleFile}.md`;
+      if (files.includes(targetFile)) {
+        files = [targetFile];
+        console.log(`Running single bypass file: ${targetFile}`);
+      } else {
+        console.log(`Warning: File ${targetFile} not found. Available files:`, files.slice(0, 5), '...');
+      }
+    }
 
     const rendererNames = Object.keys(renderers);
 

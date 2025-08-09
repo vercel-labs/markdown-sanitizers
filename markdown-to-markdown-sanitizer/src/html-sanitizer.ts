@@ -165,6 +165,13 @@ export class HtmlSanitizer {
         // We cannot find a safe way to escape it across parsers.
         node.setAttribute("alt", alt.replace(/[<>="'\[\]]/g, ""));
       }
+      // Handle title attributes that might contain HTML
+      if (node.hasAttribute && node.hasAttribute("title")) {
+        const title = node.getAttribute("title") || "";
+        // If title text contains HTML-like content, remove it.
+        // We cannot find a safe way to escape it across parsers.
+        node.setAttribute("title", title.replace(/[<>="'\[\]]/g, ""));
+      }
     });
 
     // Remove all hooks after sanitization to avoid leaking

@@ -20,7 +20,7 @@ describe("Parser Confusion Tests", () => {
         '<a href="https://example.com" title="Click [here](javascript:alert())">Link</a>';
       const result = sanitize(input);
       expect(result).toBe(
-        '[Link](https://example.com/ "Click [here](javascript:alert())")\n',
+        '[Link](https://example.com/ "Click here(javascript:alert())")\n',
       );
     });
 
@@ -29,7 +29,7 @@ describe("Parser Confusion Tests", () => {
         '<img src="https://images.com/pic.jpg" alt="![evil](javascript:alert())">';
       const result = sanitize(input);
       expect(result).toBe(
-        '![!evil(javascript:alert())](https://images.com/pic.jpg)\n',
+        "![!evil(javascript:alert())](https://images.com/pic.jpg)\n",
       );
     });
 
@@ -37,9 +37,7 @@ describe("Parser Confusion Tests", () => {
       const input =
         '<div title="**Bold** and *italic* with [link](https://evil.com)">Content</div>';
       const result = sanitize(input);
-      expect(result).toBe(
-        'Content\n',
-      );
+      expect(result).toBe("Content\n");
     });
   });
 
@@ -55,7 +53,9 @@ describe("Parser Confusion Tests", () => {
       const input =
         '[&lt;script&gt;alert("xss")&lt;/script&gt;](https://example.com)';
       const result = sanitize(input);
-      expect(result).toBe("[&3c;script&3e;alert&28;&22;xss&22;&29;&3c;&2f;script&3e;](https://example.com/)\n");
+      expect(result).toBe(
+        "[&3c;script&3e;alert&28;&22;xss&22;&29;&3c;&2f;script&3e;](https://example.com/)\n",
+      );
     });
 
     test("complex HTML structure inside markdown link text preserved", () => {
@@ -73,14 +73,18 @@ describe("Parser Confusion Tests", () => {
       const input =
         '![<script>alert("xss")</script>Safe image](https://images.com/pic.jpg)';
       const result = sanitize(input);
-      expect(result).toBe("![scriptalert(xss)/scriptSafe image](https://images.com/pic.jpg)\n");
+      expect(result).toBe(
+        "![scriptalert(xss)/scriptSafe image](https://images.com/pic.jpg)\n",
+      );
     });
 
     test("iframe inside image alt text", () => {
       const input =
         '![<iframe src="javascript:alert()"></iframe>Description](https://images.com/pic.jpg)';
       const result = sanitize(input);
-      expect(result).toBe("![iframe srcjavascript:alert()/iframeDescription](https://images.com/pic.jpg)\n");
+      expect(result).toBe(
+        "![iframe srcjavascript:alert()/iframeDescription](https://images.com/pic.jpg)\n",
+      );
     });
 
     test("nested HTML tags inside image alt text", () => {
@@ -170,9 +174,7 @@ describe("Parser Confusion Tests", () => {
       const input =
         "<div title='Single quotes with [link](https://example.com) inside'>Content</div>";
       const result = sanitize(input);
-      expect(result).toBe(
-        'Content\n',
-      );
+      expect(result).toBe("Content\n");
     });
   });
 
@@ -231,9 +233,7 @@ describe("Parser Confusion Tests", () => {
       const input =
         "[<Click here>](https://example.com) and actual <strong>HTML</strong>";
       const result = sanitize(input);
-      expect(result).toBe(
-        "[](https://example.com/)and actual **HTML**\n",
-      );
+      expect(result).toBe("[](https://example.com/)and actual **HTML**\n");
     });
 
     test("HTML that looks like markdown syntax", () => {
@@ -315,7 +315,9 @@ describe("Parser Confusion Tests", () => {
       const result = sanitize(input);
 
       expect(result).toBeTruthy(); // Just verify it works without timing
-      expect(result).toContain("&5b;link&5d;&28;https&3a;&2f;&2f;example.com&29;");
+      expect(result).toContain(
+        "&5b;link&5d;&28;https&3a;&2f;&2f;example.com&29;",
+      );
     });
   });
 });
