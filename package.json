@@ -1,0 +1,14 @@
+{
+  "name": "markdown-sanitizers",
+  "version": "1.0.0",
+  "description": "",
+  "scripts": {
+    "test:harden-react-markdown": "cd harden-react-markdown && pnpm test",
+    "test:markdown-to-markdown-sanitizer": "cd markdown-to-markdown-sanitizer && pnpm test",
+    "test": "pnpm run test:harden-react-markdown && pnpm run test:markdown-to-markdown-sanitizer"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "MIT",
+  "packageManager": "pnpm@10.14.0"
+}
