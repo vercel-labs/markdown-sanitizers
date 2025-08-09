@@ -27,7 +27,7 @@ describe("Weird Parsing Edge Cases", () => {
       const input = "Visit https://example.com or call 555-1234";
       const result = sanitize(input);
       expect(result).toBe(
-        "Visit https&3a;&2f;&2f;example.com or call 555-1234\n",
+        "Visit https&3a;&2f;&2f;example&2e;com or call 555-1234\n",
       );
     });
 
@@ -41,7 +41,7 @@ describe("Weird Parsing Edge Cases", () => {
       const input = 'Use document.getElementById("test") to get element';
       const result = sanitize(input);
       expect(result).toBe(
-        "Use document.getElementById&28;&22;test&22;&29; to get element\n",
+        "Use document&2e;getElementById&28;&22;test&22;&29; to get element\n",
       );
     });
   });
@@ -132,14 +132,14 @@ describe("Weird Parsing Edge Cases", () => {
     test("scientific notation and formulas", () => {
       const input = "E = mc^2 and 1.23e-4 is scientific notation";
       const result = sanitize(input);
-      expect(result).toBe("E &3d; mc^2 and 1.23e-4 is scientific notation\n");
+      expect(result).toBe("E &3d; mc^2 and 1&2e;23e-4 is scientific notation\n");
     });
 
     test("currency and financial notation", () => {
       const input = "Price: $100.50 or €75,00 with [link](https://example.com)";
       const result = sanitize(input);
       expect(result).toBe(
-        "Price&3a; $100.50 or €75,00 with [link](https://example.com/)\n",
+        "Price&3a; $100&2e;50 or €75,00 with [link](https://example.com/)\n",
       );
     });
   });
@@ -166,7 +166,7 @@ describe("Weird Parsing Edge Cases", () => {
         "Path: &2f;home&2f;user&2f;[config]/file.txt and C:\\\\Program Files\\\\App";
       const result = sanitize(input);
       expect(result).toBe(
-        "Path&3a; &26;2f;home&26;2f;user&26;2f;&5b;config&5d;&2f;file.txt and C&3a;&5c;Program Files&5c;App\n",
+        "Path&3a; &26;2f;home&26;2f;user&26;2f;&5b;config&5d;&2f;file&2e;txt and C&3a;&5c;Program Files&5c;App\n",
       );
     });
   });
@@ -194,7 +194,7 @@ describe("Weird Parsing Edge Cases", () => {
         "See [Smith et al., 2023](https://example.com/paper) for details";
       const result = sanitize(input);
       expect(result).toBe(
-        "See [Smith et al., 2023](https://example.com/paper) for details\n",
+        "See [Smith et al&2e;, 2023](https://example.com/paper) for details\n",
       );
     });
   });
@@ -246,7 +246,7 @@ describe("Weird Parsing Edge Cases", () => {
         "Location: 40.7128°N, 74.0060°W with [map](https://example.com)";
       const result = sanitize(input);
       expect(result).toBe(
-        "Location&3a; 40.7128°N, 74.0060°W with [map](https://example.com/)\n",
+        "Location&3a; 40&2e;7128°N, 74&2e;0060°W with [map](https://example.com/)\n",
       );
     });
   });
@@ -266,7 +266,7 @@ describe("Weird Parsing Edge Cases", () => {
         "Contact user@example.com or [support](https://example.com/contact)";
       const result = sanitize(input);
       expect(result).toBe(
-        "Contact user&40;example.com or [support](https://example.com/contact)\n",
+        "Contact user&40;example&2e;com or [support](https://example.com/contact)\n",
       );
     });
 
@@ -321,7 +321,7 @@ describe("Weird Parsing Edge Cases", () => {
         "## Version 1.2.3 [2023-12-01]\\n- Fixed [issue #123](https://example.com/issue)";
       const result = sanitize(input);
       expect(result).toBe(
-        "## Version 1.2.3 &5b;2023-12-01&5d;&5c;n- Fixed [issue #123](https://example.com/issue)\n",
+        "## Version 1&2e;2&2e;3 &5b;2023-12-01&5d;&5c;n- Fixed [issue #123](https://example.com/issue)\n",
       );
     });
 

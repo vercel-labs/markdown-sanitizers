@@ -45,7 +45,7 @@ export class MarkdownSanitizer {
     });
     const defaultEscape = this.htmlToMarkdownProcessor.escape;
     this.htmlToMarkdownProcessor.escape = (str: string) => {
-      const markdownSyntaxCharacters = /[\<\>\&\"\'\[\]\:\=\/\!\(\)\\\@]/g;
+      const markdownSyntaxCharacters = /[\<\>\&\"\'\[\]\:\=\/\!\(\)\\\@\.]/g;
       // If anything dangerous is found, encode it using HTML entities which
       // are supported by markdown.
       if (markdownSyntaxCharacters.test(str)) {

@@ -12,29 +12,39 @@ describe("Code Block Security and Functionality", () => {
     test("inline code with HTML should be preserved", () => {
       const input = 'Use `<script>alert("test")</script>` in your code.';
       const result = sanitizer.sanitize(input);
-      
-      expect(result).toBe('Use `<script>alert("test")</script>` in your code.\n');
+
+      expect(result).toBe(
+        'Use `<script>alert("test")</script>` in your code&2e;\n',
+      );
     });
 
     test("inline code with markdown syntax should be preserved", () => {
-      const input = 'The syntax is `![image](url)` for images and `[link](url)` for links.';
+      const input =
+        "The syntax is `![image](url)` for images and `[link](url)` for links.";
       const result = sanitizer.sanitize(input);
-      
-      expect(result).toBe('The syntax is `![image](url)` for images and `[link](url)` for links.\n');
+
+      expect(result).toBe(
+        "The syntax is `![image](url)` for images and `[link](url)` for links&2e;\n",
+      );
     });
 
     test("inline code with dangerous protocols should be preserved", () => {
       const input = 'Example: `<img src="javascript:alert()">` is dangerous.';
       const result = sanitizer.sanitize(input);
-      
-      expect(result).toBe('Example&3a; `<img src="javascript:alert()">` is dangerous.\n');
+
+      expect(result).toBe(
+        'Example&3a; `<img src="javascript:alert()">` is dangerous&2e;\n',
+      );
     });
 
     test("inline code with quotes and special chars should be preserved", () => {
-      const input = 'Use `document.getElementById("test")` and `element.setAttribute("class", "active")`.';
+      const input =
+        'Use `document.getElementById("test")` and `element.setAttribute("class", "active")`.';
       const result = sanitizer.sanitize(input);
-      
-      expect(result).toBe('Use `document.getElementById("test")` and `element.setAttribute("class", "active")`.\n');
+
+      expect(result).toBe(
+        'Use `document.getElementById("test")` and `element.setAttribute("class", "active")`&2e;\n',
+      );
     });
   });
 
@@ -50,10 +60,10 @@ describe("Code Block Security and Functionality", () => {
 <img src="javascript:alert('xss')" onerror="alert('xss')">
 \`\`\`
 
-End of example.`;
+End of example&26;26;26;26;26;26;26;26;26;26;26;26;26;26;26;26;26;&26;26;26;26;26;26;26;2e;`;
 
       const result = sanitizer.sanitize(input);
-      
+
       const expected = `Code example&3a;
 
 \`\`\`html
@@ -64,7 +74,7 @@ End of example.`;
 <img src="javascript:alert('xss')" onerror="alert('xss')">
 \`\`\`
 
-End of example.
+End of example&26;26;26;26;26;26;26;26;26;26;26;26;26;26;26;26;26;26;&26;26;26;26;26;26;26;26;2e;
 `;
 
       expect(result).toBe(expected);
@@ -80,10 +90,10 @@ End of example.
 <img src="x" onerror="alert('xss')">
 \`\`\`
 
-These are just examples.`;
+These are just examples&26;26;26;26;26;26;26;26;26;26;26;26;26;26;26;26;26;&26;26;26;26;26;26;2e;`;
 
       const result = sanitizer.sanitize(input);
-      
+
       const expected = `Markdown examples&3a;
 
 \`\`\`markdown
@@ -93,7 +103,7 @@ These are just examples.`;
 <img src="x" onerror="alert('xss')">
 \`\`\`
 
-These are just examples.
+These are just examples&26;26;26;26;26;26;26;26;26;26;26;26;26;26;26;26;26;26;&26;26;26;26;26;26;26;2e;
 `;
 
       expect(result).toBe(expected);
@@ -113,7 +123,7 @@ function dangerous() {
 Don't run this code.`;
 
       const result = sanitizer.sanitize(input);
-      
+
       const expected = `JavaScript example&3a;
 
 \`\`\`javascript
@@ -124,7 +134,7 @@ function dangerous() {
 }
 \`\`\`
 
-Don&27;t run this code.
+Don&27;t run this code&2e;
 `;
 
       expect(result).toBe(expected);
@@ -138,10 +148,10 @@ Don&27;t run this code.
     <script>alert('xss')</script>
     <img src="javascript:alert()" onerror="alert()">
     
-End of code.`;
+End of code&26;26;26;26;26;26;26;26;26;26;26;26;26;26;26;26;26;&26;26;26;26;26;26;2e;`;
 
       const result = sanitizer.sanitize(input);
-      
+
       const expected = `Example&3a;
 
 \`\`\`
@@ -149,7 +159,7 @@ End of code.`;
 <img src="javascript:alert()" onerror="alert()">
 \`\`\`
 
-End of code.
+End of code&26;26;26;26;26;26;26;26;26;26;26;26;26;26;26;26;26;26;&26;26;26;26;26;26;26;2e;
 `;
 
       expect(result).toBe(expected);
@@ -171,18 +181,18 @@ Inline code: \`<img src="x" onerror="alert()">\` in text.
 Final [link](https://example.com) here.`;
 
       const result = sanitizer.sanitize(input);
-      
-      const expected = `Here is safe content with [a link](https://example.com/).
+
+      const expected = `Here is safe content with [a link](https://example.com/)&2e;
 
 \`\`\`html
 <script>alert('This is in code')</script>
 \`\`\`
 
-And here is more safe content with **bold text**.
+And here is more safe content with **bold text**&2e;
 
-Inline code&3a; \`<img src="x" onerror="alert()">\` in text.
+Inline code&3a; \`<img src="x" onerror="alert()">\` in text&2e;
 
-Final [link](https://example.com/) here.
+Final [link](https://example.com/) here&2e;
 `;
 
       expect(result).toBe(expected);
@@ -200,7 +210,7 @@ But this should be sanitized: <script>alert('dangerous')</script>
 And this: ![bad](javascript:alert('xss'))`;
 
       const result = sanitizer.sanitize(input);
-      
+
       const expected = `Code example&3a;
 
 \`\`\`html

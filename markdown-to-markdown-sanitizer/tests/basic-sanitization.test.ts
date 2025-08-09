@@ -85,7 +85,7 @@ Also a bad [link](https://evil.com) and bad ![image](https://evil.com/tracker.gi
 
       const result = sanitize(input);
       expect(result).toBe(
-        "# Title\n\nHere is a [link](https://example.com/page) and an image ![img](https://images.com/pic.jpg).\n\nAlso a bad [link](#) and bad ![image](/forbidden).\n",
+        "# Title\n\nHere is a [link](https://example.com/page) and an image ![img](https://images.com/pic.jpg)&2e;\n\nAlso a bad [link](#) and bad ![image](/forbidden)&2e;\n",
       );
     });
   });
@@ -101,7 +101,7 @@ Also a bad [link](https://evil.com) and bad ![image](https://evil.com/tracker.gi
 
     test("handles plain text without markdown", () => {
       const input = "Just plain text with no markdown.";
-      expect(sanitize(input)).toBe("Just plain text with no markdown.\n");
+      expect(sanitize(input)).toBe("Just plain text with no markdown&2e;\n");
     });
 
     test("handles malformed markdown gracefully", () => {
