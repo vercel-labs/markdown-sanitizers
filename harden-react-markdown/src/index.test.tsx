@@ -371,6 +371,21 @@ block code
       expect(screen.getByText("GitHub [blocked]")).toBeInTheDocument();
     });
 
+    it("blocks all links when empty allowedLinkPrefixes array is provided", () => {
+      const markdown = "[GitHub](https://github.com)";
+      render(
+        <HardenedReactMarkdown
+          defaultOrigin="https://example.com"
+          allowedLinkPrefixes={[]}
+        >
+          {markdown}
+        </HardenedReactMarkdown>
+      );
+
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
+      expect(screen.getByText("GitHub [blocked]")).toBeInTheDocument();
+    });
+
     it("allows links with allowed prefixes", () => {
       const markdown = "[GitHub](https://github.com/user/repo)";
       render(
@@ -442,6 +457,21 @@ block code
     it("blocks all images when no prefixes are allowed", () => {
       const markdown = "![Alt text](https://example.com/image.jpg)";
       render(<HardenedReactMarkdown>{markdown}</HardenedReactMarkdown>);
+
+      expect(screen.queryByRole("img")).not.toBeInTheDocument();
+      expect(screen.getByText("[Image blocked: Alt text]")).toBeInTheDocument();
+    });
+
+    it("blocks all images when empty allowedImagePrefixes array is provided", () => {
+      const markdown = "![Alt text](https://example.com/image.jpg)";
+      render(
+        <HardenedReactMarkdown
+          defaultOrigin="https://example.com"
+          allowedImagePrefixes={[]}
+        >
+          {markdown}
+        </HardenedReactMarkdown>
+      );
 
       expect(screen.queryByRole("img")).not.toBeInTheDocument();
       expect(screen.getByText("[Image blocked: Alt text]")).toBeInTheDocument();

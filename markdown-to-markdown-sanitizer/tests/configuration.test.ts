@@ -178,6 +178,53 @@ describe("Configuration Options", () => {
       expect(result).toContain("![Image](/forbidden)");
     });
 
+    test("blocks all links when allowedLinkPrefixes is empty array", () => {
+      const sanitizer = new MarkdownSanitizer({
+        defaultOrigin: "https://example.com",
+        allowedLinkPrefixes: [],
+        allowedImagePrefixes: ["https://images.com"],
+      });
+
+      const input = "[GitHub](https://github.com) [Example](https://example.com) [Relative](/page)";
+      const result = sanitizer.sanitize(input);
+
+      expect(result).toBe("[GitHub](#) [Example](#) [Relative](#)\n");
+    });
+
+    test("blocks all images when allowedImagePrefixes is empty array", () => {
+      const sanitizer = new MarkdownSanitizer({
+        defaultOrigin: "https://example.com",
+        allowedLinkPrefixes: ["https://example.com"],
+        allowedImagePrefixes: [],
+      });
+
+      const input = "![GitHub](https://github.com/image.png) ![Example](https://example.com/image.jpg) ![Relative](/image.svg)";
+      const result = sanitizer.sanitize(input);
+
+      expect(result).toBe("![GitHub](/forbidden) ![Example](/forbidden) ![Relative](/forbidden)\n");
+    });
+
+    test("blocks both links and images when both allow-lists are empty", () => {
+      const sanitizer = new MarkdownSanitizer({
+        defaultOrigin: "https://example.com",
+        allowedLinkPrefixes: [],
+        allowedImagePrefixes: [],
+      });
+
+      const input = `# Test Document
+[GitHub Link](https://github.com/repo)
+![GitHub Image](https://github.com/image.png)
+[Relative Link](/page)
+![Relative Image](/image.jpg)`;
+
+      const result = sanitizer.sanitize(input);
+
+      expect(result).toContain("[GitHub Link](#)");
+      expect(result).toContain("![GitHub Image](/forbidden)");
+      expect(result).toContain("[Relative Link](#)");
+      expect(result).toContain("![Relative Image](/forbidden)");
+    });
+
     test("handles undefined allowedLinkPrefixes", () => {
       const sanitizer = new MarkdownSanitizer({
         defaultOrigin: "https://example.com",
