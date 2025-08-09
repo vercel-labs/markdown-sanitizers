@@ -7,7 +7,6 @@ describe("Weird Parsing Edge Cases", () => {
       defaultOrigin: "https://example.com",
       allowedLinkPrefixes: ["https://example.com", "https://trusted.org"],
       allowedImagePrefixes: ["https://example.com", "https://images.com"],
-      html: { enabled: true },
       ...options,
     });
 
