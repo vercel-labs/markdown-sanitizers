@@ -4,7 +4,7 @@ import remarkRehype from "remark-rehype";
 import rehypeRaw from "rehype-raw";
 import rehypeStringify from "rehype-stringify";
 import TurndownService from "turndown";
-// @ts-ignore - no types available for turndown-plugin-gfm
+// @ts-expect-error - no types available for turndown-plugin-gfm
 import { gfm } from "turndown-plugin-gfm";
 import { UrlNormalizer } from "./url-normalizer.js";
 import { HtmlSanitizer } from "./html-sanitizer.js";
@@ -15,7 +15,7 @@ export type { SanitizeOptions, HtmlSanitizeOptions } from "./types.js";
 
 export class MarkdownSanitizer {
   private options: SanitizeOptions;
-  private markdownToHtmlProcessor: any;
+  private markdownToHtmlProcessor: ReturnType<typeof unified>;
   private htmlToMarkdownProcessor: TurndownService;
   private urlNormalizer: UrlNormalizer;
   private htmlSanitizer: HtmlSanitizer;
@@ -31,7 +31,7 @@ export class MarkdownSanitizer {
       .use(remarkParse)
       .use(remarkRehype, { allowDangerousHtml: true })
       .use(rehypeRaw)
-      .use(rehypeStringify);
+      .use(rehypeStringify) as unknown as ReturnType<typeof unified>;
 
     // Create turndown processor for HTML to markdown with GFM support
     this.htmlToMarkdownProcessor = new TurndownService({
@@ -114,4 +114,3 @@ export function sanitizeMarkdown(
   const sanitizer = new MarkdownSanitizer(options);
   return sanitizer.sanitize(markdown);
 }
-

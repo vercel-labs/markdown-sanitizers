@@ -1,6 +1,6 @@
 {
   "name": "harden-react-markdown",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A security-focused wrapper for react-markdown that filters URLs based on allowed prefixes",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -9,7 +9,7 @@
   ],
   "scripts": {
     "build": "tsc",
-    "test": "vitest",
+    "test": "vitest --run",
     "test:watch": "vitest --watch",
     "test:ui": "vitest --ui",
     "prepublishOnly": "npm run build && npm test"

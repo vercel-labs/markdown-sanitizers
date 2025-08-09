@@ -10,16 +10,15 @@ interface HardenReactMarkdownOptions {
 }
 
 // Ensure component accepts Options and extract its exact prop type
-type MarkdownComponentProps<T extends ComponentType<Options>> = ComponentProps<T>;
+type MarkdownComponentProps<T extends ComponentType<Options>> =
+  ComponentProps<T>;
 
 // Strict validation that component props are compatible with Options
-type ValidateMarkdownComponent<T extends ComponentType<Options>> = 
-  ComponentProps<T> extends Options
-    ? T
-    : never;
+type ValidateMarkdownComponent<T extends ComponentType<Options>> =
+  ComponentProps<T> extends Options ? T : never;
 
 // Enhanced constraint ensuring the component is both Options-compatible and JSX-renderable
-type StrictMarkdownComponent<T extends ComponentType<Options>> = 
+type StrictMarkdownComponent<T extends ComponentType<Options>> =
   T extends ComponentType<infer P>
     ? P extends Options
       ? ValidateMarkdownComponent<T>
@@ -30,9 +29,12 @@ export default function hardenReactMarkdown<
   TMarkdownComponent extends ComponentType<Options>
 >(
   MarkdownComponent: StrictMarkdownComponent<TMarkdownComponent>
-): ComponentType<MarkdownComponentProps<TMarkdownComponent> & HardenReactMarkdownOptions> {
+): ComponentType<
+  MarkdownComponentProps<TMarkdownComponent> & HardenReactMarkdownOptions
+> {
   return function HardenedReactMarkdown(
-    props: MarkdownComponentProps<TMarkdownComponent> & HardenReactMarkdownOptions
+    props: MarkdownComponentProps<TMarkdownComponent> &
+      HardenReactMarkdownOptions
   ) {
     const {
       defaultOrigin = "",
@@ -42,9 +44,13 @@ export default function hardenReactMarkdown<
       ...reactMarkdownProps
     } = props;
     // Only require defaultOrigin if we have specific prefixes (not wildcard only)
-    const hasSpecificLinkPrefixes = allowedLinkPrefixes.length && !allowedLinkPrefixes.every(p => p === "*");
-    const hasSpecificImagePrefixes = allowedImagePrefixes.length && !allowedImagePrefixes.every(p => p === "*");
-    
+    const hasSpecificLinkPrefixes =
+      allowedLinkPrefixes.length &&
+      !allowedLinkPrefixes.every((p) => p === "*");
+    const hasSpecificImagePrefixes =
+      allowedImagePrefixes.length &&
+      !allowedImagePrefixes.every((p) => p === "*");
+
     if (
       !defaultOrigin &&
       (hasSpecificLinkPrefixes || hasSpecificImagePrefixes)
@@ -84,7 +90,9 @@ export default function hardenReactMarkdown<
       allowedPrefixes: string[]
     ): string | null => {
       if (!url) return null;
-      
+      const parsedUrl = parseUrl(url);
+      if (!parsedUrl) return null;
+
       // Check for wildcard - allow all URLs
       if (allowedPrefixes.includes("*")) {
         const inputWasRelative = isPathRelativeUrl(url);
@@ -97,7 +105,7 @@ export default function hardenReactMarkdown<
         }
         return null;
       }
-      
+
       // If the input is path relative, we output a path relative URL as well,
       // however, we always run the same checks on an absolute URL and we
       // always rescronstruct the output from the parsed URL to ensure that
@@ -106,7 +114,16 @@ export default function hardenReactMarkdown<
       const urlString = parseUrl(url);
       if (
         urlString &&
-        allowedPrefixes.some((prefix) => urlString.href.startsWith(prefix))
+        allowedPrefixes.some((prefix) => {
+          const parsedPrefix = parseUrl(prefix);
+          if (!parsedPrefix) {
+            return false;
+          }
+          if (parsedPrefix.origin !== urlString.origin) {
+            return false;
+          }
+          return urlString.href.startsWith(parsedPrefix.href);
+        })
       ) {
         if (inputWasRelative) {
           return urlString.pathname + urlString.search + urlString.hash;
@@ -131,7 +148,7 @@ export default function hardenReactMarkdown<
               ...props,
             });
           }
-          
+
           // Otherwise use default anchor with security attributes
           return (
             <a
@@ -162,7 +179,7 @@ export default function hardenReactMarkdown<
               ...props,
             });
           }
-          
+
           // Otherwise use default img
           return <img src={transformedUrl} alt={alt} {...props} />;
         }
@@ -181,9 +198,9 @@ export default function hardenReactMarkdown<
 
     const componentProps = {
       ...reactMarkdownProps,
-      components: mergedComponents
+      components: mergedComponents,
     } as MarkdownComponentProps<TMarkdownComponent>;
-    
+
     return createElement(MarkdownComponent, componentProps);
   };
 }

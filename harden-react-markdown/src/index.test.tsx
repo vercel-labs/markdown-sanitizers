@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { render, screen } from "@testing-library/react";
+import React from "react";
 import ReactMarkdown from "react-markdown";
 import type { Options } from "react-markdown";
 import hardenReactMarkdown from "./index";
@@ -198,6 +199,13 @@ describe("HardenedMarkdown", () => {
       "link",
       badLinkUrls,
       ["https://github.com/"],
+      "https://example.com"
+    );
+
+    testBlockedUrls(
+      "link",
+      badLinkUrls,
+      ["https://github.com"],
       "https://example.com"
     );
   });
@@ -412,8 +420,8 @@ block code
           defaultOrigin="https://example.com"
           allowedLinkPrefixes={[
             "https://github.com/",
-            "https://docs.",
-            "https://www.",
+            "https://docs.example.com",
+            "https://www.example.com",
           ]}
         >
           {markdown}
@@ -421,7 +429,11 @@ block code
       );
 
       const links = screen.getAllByRole("link");
-      expect(links).toHaveLength(3);
+      expect(links.map((link) => link.getAttribute("href"))).toEqual([
+        "https://github.com/repo",
+        "https://docs.example.com/page",
+        "https://www.example.com/",
+      ]);
       expect(screen.getByText("Blocked [blocked]")).toBeInTheDocument();
     });
   });
@@ -559,14 +571,18 @@ block code
     it("uses custom components with security enhancements for allowed URLs", () => {
       const customComponents = {
         a: ({ children, className, ...props }: any) => (
-          <a data-testid="custom-link" className={`custom-class ${className || ''}`} {...props}>
+          <a
+            data-testid="custom-link"
+            className={`custom-class ${className || ""}`}
+            {...props}
+          >
             {children}
           </a>
         ),
       };
 
       render(
-        <HardenedReactMarkdown 
+        <HardenedReactMarkdown
           components={customComponents}
           defaultOrigin="https://example.com"
           allowedLinkPrefixes={["https://example.com/"]}
@@ -632,7 +648,9 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
       );
 
       // Check allowed content
-      expect(screen.getAllByRole("link")).toHaveLength(2);
+      expect(
+        screen.getAllByRole("link").map((link) => link.getAttribute("href"))
+      ).toEqual(["https://github.com/repo"]);
       expect(screen.getByRole("img")).toHaveAttribute("alt", "Allowed image");
 
       // Check blocked content
@@ -882,10 +900,22 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
   describe("Wildcard prefix support", () => {
     it("allows all links when allowedLinkPrefixes includes '*'", () => {
       const testUrls = [
-        { input: "https://example.com/test", expected: "https://example.com/test" },
-        { input: "https://malicious-site.com/tracker", expected: "https://malicious-site.com/tracker" },
-        { input: "http://insecure-site.com", expected: "http://insecure-site.com/" },
-        { input: "https://any-domain.org/path", expected: "https://any-domain.org/path" },
+        {
+          input: "https://example.com/test",
+          expected: "https://example.com/test",
+        },
+        {
+          input: "https://malicious-site.com/tracker",
+          expected: "https://malicious-site.com/tracker",
+        },
+        {
+          input: "http://insecure-site.com",
+          expected: "http://insecure-site.com/",
+        },
+        {
+          input: "https://any-domain.org/path",
+          expected: "https://any-domain.org/path",
+        },
       ];
 
       testUrls.forEach(({ input, expected }) => {
@@ -940,7 +970,10 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
         </HardenedReactMarkdown>
       );
 
-      expect(screen.getByRole("link")).toHaveAttribute("href", "/internal-page");
+      expect(screen.getByRole("link")).toHaveAttribute(
+        "href",
+        "/internal-page"
+      );
       unmount1();
 
       const { unmount: unmount2 } = render(
@@ -952,7 +985,10 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
         </HardenedReactMarkdown>
       );
 
-      expect(screen.getByRole("img")).toHaveAttribute("src", "/images/logo.png");
+      expect(screen.getByRole("img")).toHaveAttribute(
+        "src",
+        "/images/logo.png"
+      );
       unmount2();
     });
 

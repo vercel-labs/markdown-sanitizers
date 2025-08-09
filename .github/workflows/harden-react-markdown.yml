@@ -1,0 +1,52 @@
+name: harden-react-markdown CI
+
+on:
+  push:
+    branches: [main, develop]
+    paths:
+      - "harden-react-markdown/**"
+      - "markdown-to-markdown-sanitizer/tests/bypass-attempts/**"
+      - ".github/workflows/harden-react-markdown.yml"
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "harden-react-markdown/**"
+      - "markdown-to-markdown-sanitizer/tests/bypass-attempts/**"
+      - ".github/workflows/harden-react-markdown.yml"
+
+defaults:
+  run:
+    working-directory: ./harden-react-markdown
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x, 22.x]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "pnpm"
+          cache-dependency-path: "./harden-react-markdown/pnpm-lock.yaml"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        run: pnpm run build
+
+      - name: Test
+        run: pnpm test
