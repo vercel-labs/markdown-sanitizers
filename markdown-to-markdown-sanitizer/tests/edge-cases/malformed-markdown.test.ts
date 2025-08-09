@@ -18,13 +18,13 @@ describe("Malformed Markdown Edge Cases", () => {
     test("unclosed link brackets", () => {
       const input = "[Unclosed link text(https://example.com)";
       const result = sanitize(input);
-      expect(result).toBe("&5b;Unclosed link text&28;https&3a;&2f;&2f;example.com&29;\n");
+      expect(result).toBe("&5b;Unclosed link text&28;https&3a;&2f;&2f;example&2e;com&29;\n");
     });
 
     test("missing closing parenthesis in URL", () => {
       const input = "[Link text](https://example.com";
       const result = sanitize(input);
-      expect(result).toBe("&5b;Link text&5d;&28;https&3a;&2f;&2f;example.com\n");
+      expect(result).toBe("&5b;Link text&5d;&28;https&3a;&2f;&2f;example&2e;com\n");
     });
 
     test("nested brackets in link text", () => {
@@ -39,7 +39,7 @@ describe("Malformed Markdown Edge Cases", () => {
       const input = "[Link1](https://example.com[Link2](https://trusted.org)";
       const result = sanitize(input);
       expect(result).toBe(
-        "&5b;Link1&5d;&28;https&3a;&2f;&2f;example.com[Link2](https://trusted.org/)\n"
+        "&5b;Link1&5d;&28;https&3a;&2f;&2f;example&2e;com[Link2](https://trusted.org/)\n"
       );
     });
 
@@ -61,7 +61,7 @@ describe("Malformed Markdown Edge Cases", () => {
       const input = "![Unclosed alt text(https://images.com/pic.jpg)";
       const result = sanitize(input);
       expect(result).toBe(
-        "&21;&5b;Unclosed alt text&28;https&3a;&2f;&2f;images.com&2f;pic.jpg&29;\n"
+        "&21;&5b;Unclosed alt text&28;https&3a;&2f;&2f;images&2e;com&2f;pic&2e;jpg&29;\n"
       );
     });
 
@@ -93,14 +93,14 @@ describe("Malformed Markdown Edge Cases", () => {
       const input =
         "[ref]: https://example.com\n\nText without using the reference.";
       const result = sanitize(input);
-      expect(result).toBe("Text without using the reference.\n");
+      expect(result).toBe("Text without using the reference&2e;\n");
     });
 
     test("malformed reference definition", () => {
       const input = "[ref] https://example.com\n[Text][ref]";
       const result = sanitize(input);
       expect(result).toBe(
-        "&5b;ref&5d; https&3a;&2f;&2f;example.com &5b;Text&5d;&5b;ref&5d;\n"
+        "&5b;ref&5d; https&3a;&2f;&2f;example&2e;com &5b;Text&5d;&5b;ref&5d;\n"
       );
     });
 
@@ -117,7 +117,7 @@ describe("Malformed Markdown Edge Cases", () => {
         "<div>[Broken link](https://example.com and **unclosed bold</div>";
       const result = sanitize(input);
       expect(result).toBe(
-        "&5b;Broken link&5d;&28;https&3a;&2f;&2f;example.com and **unclosed bold\n"
+        "&5b;Broken link&5d;&28;https&3a;&2f;&2f;example&2e;com and **unclosed bold\n"
       );
     });
 
@@ -159,7 +159,7 @@ describe("Malformed Markdown Edge Cases", () => {
         "[Link <text>](https://example.com) and <https://example.com>";
       const result = sanitize(input);
       expect(result).toBe(
-        "[Link](https://example.com/) and [https&3a;&2f;&2f;example.com](https://example.com/)\n"
+        "[Link](https://example.com/) and [https&3a;&2f;&2f;example&2e;com](https://example.com/)\n"
       );
     });
 
@@ -208,7 +208,7 @@ describe("Malformed Markdown Edge Cases", () => {
     test("URL fragments in malformed syntax", () => {
       const input = "[Link](https://evil.com#fragment and text";
       const result = sanitize(input);
-      expect(result).toBe("&5b;Link&5d;&28;https&3a;&2f;&2f;evil.com#fragment and text\n");
+      expect(result).toBe("&5b;Link&5d;&28;https&3a;&2f;&2f;evil&2e;com#fragment and text\n");
     });
   });
 
@@ -218,7 +218,7 @@ describe("Malformed Markdown Edge Cases", () => {
         "[<div>broken](https://example.com</div> &21;[img](https://images.com **bold**";
       const result = sanitize(input);
       expect(result).toBe(
-        "&5b;\n\nbroken&5d;&28;https&3a;&2f;&2f;example.com\n\n&26;21;&5b;img&5d;&28;https&3a;&2f;&2f;images.com **bold**\n"
+        "&5b;\n\nbroken&5d;&28;https&3a;&2f;&2f;example&2e;com\n\n&26;21;&5b;img&5d;&28;https&3a;&2f;&2f;images&2e;com **bold**\n"
       );
     });
 

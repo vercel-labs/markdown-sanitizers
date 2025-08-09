@@ -29,7 +29,7 @@ More content with <code>inline code</code> and a [trusted link](https://trusted.
     
     // The new pipeline properly converts HTML to markdown, preserving all formatting
     expect(result).toBe(
-      "# Title\n\nHere is a [link](https://example.com/page) with **bold** text.\n\n**Safe HTML** and *emphasis*.\n\n## Subsection\n\nMore content with `inline code` and a [trusted link](https://trusted.org/page).\n"
+      "# Title\n\nHere is a [link](https://example.com/page) with **bold** text&2e;\n\n**Safe HTML** and *emphasis*&2e;\n\n## Subsection\n\nMore content with `inline code` and a [trusted link](https://trusted.org/page)&2e;\n"
     );
   });
 

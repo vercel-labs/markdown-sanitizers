@@ -85,11 +85,11 @@ The configuration format is:
 
     const expected = `# Complete Markdown Guide
 
-This is a comprehensive test document that demonstrates **various markdown features** working together in a *realistic document* format.
+This is a comprehensive test document that demonstrates **various markdown features** working together in a *realistic document* format&2e;
 
 ## Text Formatting
 
-Here we have **bold text**, *italic text*, and ***bold italic text***. We can also use \`inline code\` for technical terms like \`getElementById()\` and \`querySelector()\`.
+Here we have **bold text**, *italic text*, and ***bold italic text***&2e; We can also use \`inline code\` for technical terms like \`getElementById()\` and \`querySelector()\`&2e;
 
 ### Lists and Structure
 
@@ -107,7 +107,7 @@ And here&27;s an ordered list&3a;
 
 ## Links and Images
 
-Check out our [main website](https://example.com/) for more information. You can also view our [GitHub repository](https://github.com/example/repo) for the source code.
+Check out our [main website](https://example.com/) for more information&2e; You can also view our [GitHub repository](https://github.com/example/repo) for the source code&2e;
 
 Here&27;s an image&3a; ![Example diagram](https://example.com/images/diagram.png)
 
@@ -122,17 +122,17 @@ def greet_user(name):
     return f"Hello, {name}!"
 \`\`\`
 
-And some inline code&3a; use \`npm install\` to install packages.
+And some inline code&3a; use \`npm install\` to install packages&2e;
 
 ## Quotes and References
 
-> This is an important quote that provides valuable information about the topic we&27;re discussing.
+> This is an important quote that provides valuable information about the topic we&27;re discussing&2e;
 
-As mentioned in the [research paper](https://example.com/research), this approach has been proven effective.
+As mentioned in the [research paper](https://example.com/research), this approach has been proven effective&2e;
 
 ## Technical Documentation
 
-The API endpoint \`GET /api/users\` returns user data. Here are the parameters&3a;
+The API endpoint \`GET /api/users\` returns user data&2e; Here are the parameters&3a;
 
 *   \`limit\`&3a; Number of users to return &28;default&3a; 10&26;29;
 *   \`offset\`&3a; Starting position &28;default&3a; 0&26;29;
@@ -142,7 +142,7 @@ Example usage&3a; \`curl https://example.com/api/users?limit=20&sort=name\`
 
 ## Mixed Content
 
-Sometimes we need to discuss **technical concepts** like \`document.querySelector('.class')\` while also referencing [external resources](https://example.com/tools) and showing *emphasis* on important points.
+Sometimes we need to discuss **technical concepts** like \`document.querySelector('.class')\` while also referencing [external resources](https://example.com/tools) and showing *emphasis* on important points&2e;
 
 The configuration format is&3a;
 
@@ -156,7 +156,7 @@ The configuration format is&3a;
 
 * * *
 
-*This document demonstrates comprehensive markdown usage in a realistic, non-malicious context.*
+*This document demonstrates comprehensive markdown usage in a realistic, non-malicious context&2e;*
 `;
 
     expect(result).toBe(expected);

@@ -51,7 +51,7 @@ describe("maxMarkdownLength configuration", () => {
     
     // Should not be truncated and should process successfully
     expect(result.length).toBeGreaterThan(0);
-    expect(result.trim()).toBe(longContent.trim());
+    expect(result.trim()).toBe(longContent.trim().replace(/\./g, '&2e;'));
   });
 
   it("should handle exact length match", () => {

@@ -15,19 +15,24 @@ describe("Harden React Markdown Bypass Attempts", () => {
     "https://example.com/",
     "https://trusted.org/",
     "https://images.com/",
+    "https://prefix.com/",
   ];
 
   const hardenedMarkdownConfig = {
     defaultOrigin: "https://example.com",
     allowedLinkPrefixes: ["https://example.com/", "https://trusted.org/"],
-    allowedImagePrefixes: ["https://example.com/", "https://images.com/"],
+    allowedImagePrefixes: [
+      "https://example.com/",
+      "https://images.com/",
+      "https://prefix.com/prefix/",
+    ],
   };
 
   const renderToHtml = (markdown: string) => {
     const { container } = render(
       <HardenedReactMarkdown {...hardenedMarkdownConfig}>
         {markdown}
-      </HardenedReactMarkdown>
+      </HardenedReactMarkdown>,
     );
     return container.innerHTML;
   };
@@ -48,7 +53,7 @@ describe("Harden React Markdown Bypass Attempts", () => {
       const issue = isDangerousUrl(src);
       if (issue) {
         issues.push(
-          `Dangerous src attribute found: ${src} (${issue}): ${element.outerHTML}`
+          `Dangerous src attribute found: ${src} (${issue}): ${element.outerHTML}`,
         );
       }
     });
@@ -63,7 +68,7 @@ describe("Harden React Markdown Bypass Attempts", () => {
       const issue = isDangerousUrl(href);
       if (issue) {
         issues.push(
-          `Dangerous href attribute found: ${href} (${issue}): ${element.outerHTML}`
+          `Dangerous href attribute found: ${href} (${issue}): ${element.outerHTML}`,
         );
       }
     });
@@ -76,7 +81,7 @@ describe("Harden React Markdown Bypass Attempts", () => {
         const attr = attributes[i];
         if (attr.name.startsWith("on")) {
           issues.push(
-            `Event handler found: ${attr.name}="${attr.value}": ${element.outerHTML}`
+            `Event handler found: ${attr.name}="${attr.value}": ${element.outerHTML}`,
           );
         }
       }
@@ -88,7 +93,7 @@ describe("Harden React Markdown Bypass Attempts", () => {
       issues.push(
         `Script tags found: ${scripts.length}: ${Array.from(scripts)
           .map((script) => script.outerHTML)
-          .join("\n")}`
+          .join("\n")}`,
       );
     }
 
@@ -112,6 +117,15 @@ describe("Harden React Markdown Bypass Attempts", () => {
         return "bad protocol";
       }
 
+      if (parsedUrl.origin === new URL("https://prefix.com/").origin) {
+        if (!parsedUrl.href.startsWith("https://prefix.com/prefix/")) {
+          return "prefix bypass";
+        }
+        if (!url.startsWith("https://prefix.com/prefix/")) {
+          return "prefix bypass";
+        }
+      }
+
       // Check if origin is trusted
       const isTrustedOrigin = trustedOrigins.some((origin) => {
         const trustedUrl = new URL(origin);
@@ -132,7 +146,7 @@ describe("Harden React Markdown Bypass Attempts", () => {
   describe("Individual Bypass Files", () => {
     const bypassDir = path.join(
       __dirname,
-      "../../markdown-to-markdown-sanitizer/tests/bypass-attempts"
+      "../../markdown-to-markdown-sanitizer/tests/bypass-attempts",
     );
 
     // Read all markdown files from bypass-attempts directory

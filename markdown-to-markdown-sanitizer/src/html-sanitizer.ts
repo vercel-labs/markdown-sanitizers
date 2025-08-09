@@ -158,19 +158,21 @@ export class HtmlSanitizer {
         node.setAttribute("src", sanitizedUrl);
       }
 
+      function sanitizeAttributeValue(value: string) {
+        // If value contains HTML-like content, remove it.
+        // We cannot find a safe way to escape it across parsers.
+        return value.replace(/[<>="'\[\]]/g, "");
+      }
+
       // Handle alt attributes that might contain HTML
       if (node.hasAttribute && node.hasAttribute("alt")) {
         const alt = node.getAttribute("alt") || "";
-        // If alt text contains HTML-like content, remove it.
-        // We cannot find a safe way to escape it across parsers.
-        node.setAttribute("alt", alt.replace(/[<>="'\[\]]/g, ""));
+        node.setAttribute("alt", sanitizeAttributeValue(alt));
       }
       // Handle title attributes that might contain HTML
       if (node.hasAttribute && node.hasAttribute("title")) {
         const title = node.getAttribute("title") || "";
-        // If title text contains HTML-like content, remove it.
-        // We cannot find a safe way to escape it across parsers.
-        node.setAttribute("title", title.replace(/[<>="'\[\]]/g, ""));
+        node.setAttribute("title", sanitizeAttributeValue(title));
       }
     });
 

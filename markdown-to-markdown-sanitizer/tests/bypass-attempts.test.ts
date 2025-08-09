@@ -15,12 +15,17 @@ describe("Markdown Sanitizer Bypass Attempts", () => {
     "https://example.com/",
     "https://trusted.org/",
     "https://images.com/",
+    "https://prefix.com/",
   ];
   const createSanitizer = (options = {}) =>
     new MarkdownSanitizer({
       defaultOrigin: "https://example.com",
       allowedLinkPrefixes: ["https://example.com", "https://trusted.org"],
-      allowedImagePrefixes: ["https://example.com", "https://images.com"],
+      allowedImagePrefixes: [
+        "https://example.com",
+        "https://images.com",
+        "https://prefix.com/prefix/",
+      ],
       ...options,
     });
 
@@ -74,7 +79,7 @@ describe("Markdown Sanitizer Bypass Attempts", () => {
   const sanitizeAndRenderToHtml = async (
     markdown: string,
     rendererName: string,
-    options = {}
+    options = {},
   ) => {
     const sanitizer = createSanitizer(options);
     const sanitized = sanitizer.sanitize(markdown);
@@ -107,7 +112,7 @@ describe("Markdown Sanitizer Bypass Attempts", () => {
       const issue = isDangerousUrl(src);
       if (issue) {
         issues.push(
-          `Dangerous src attribute found: ${src} (${issue}): ${element.outerHTML}`
+          `Dangerous src attribute found: ${src} (${issue}): ${element.outerHTML}`,
         );
       }
     });
@@ -122,7 +127,7 @@ describe("Markdown Sanitizer Bypass Attempts", () => {
       const issue = isDangerousUrl(href);
       if (issue) {
         issues.push(
-          `Dangerous href attribute found: ${href} (${issue}): ${element.outerHTML}`
+          `Dangerous href attribute found: ${href} (${issue}): ${element.outerHTML}`,
         );
       }
     });
@@ -135,7 +140,7 @@ describe("Markdown Sanitizer Bypass Attempts", () => {
         const attr = attributes[i];
         if (attr.name.startsWith("on")) {
           issues.push(
-            `Event handler found: ${attr.name}="${attr.value}": ${element.outerHTML}`
+            `Event handler found: ${attr.name}="${attr.value}": ${element.outerHTML}`,
           );
         }
       }
@@ -147,7 +152,7 @@ describe("Markdown Sanitizer Bypass Attempts", () => {
       issues.push(
         `Script tags found: ${scripts.length}: ${Array.from(scripts)
           .map((script) => script.outerHTML)
-          .join("\n")}`
+          .join("\n")}`,
       );
     }
 
@@ -169,6 +174,15 @@ describe("Markdown Sanitizer Bypass Attempts", () => {
       // Check if protocol is dangerous
       if (parsedUrl.protocol !== "https:" && parsedUrl.protocol !== "http:") {
         return "bad protocol";
+      }
+
+      if (parsedUrl.origin === new URL("https://prefix.com/").origin) {
+        if (!parsedUrl.href.startsWith("https://prefix.com/prefix/")) {
+          return "prefix bypass";
+        }
+        if (!url.startsWith("https://prefix.com/prefix/")) {
+          return "prefix bypass";
+        }
       }
 
       // Check if origin is trusted
@@ -200,12 +214,18 @@ describe("Markdown Sanitizer Bypass Attempts", () => {
     // If SINGLE_BYPASS_FILE is set, only run that specific file
     const singleFile = process.env.SINGLE_BYPASS_FILE;
     if (singleFile) {
-      const targetFile = singleFile.endsWith('.md') ? singleFile : `${singleFile}.md`;
+      const targetFile = singleFile.endsWith(".md")
+        ? singleFile
+        : `${singleFile}.md`;
       if (files.includes(targetFile)) {
         files = [targetFile];
         console.log(`Running single bypass file: ${targetFile}`);
       } else {
-        console.log(`Warning: File ${targetFile} not found. Available files:`, files.slice(0, 5), '...');
+        console.log(
+          `Warning: File ${targetFile} not found. Available files:`,
+          files.slice(0, 5),
+          "...",
+        );
       }
     }
 
@@ -221,7 +241,7 @@ describe("Markdown Sanitizer Bypass Attempts", () => {
             // Sanitize and render to HTML using specific renderer
             const { html, sanitized } = await sanitizeAndRenderToHtml(
               markdown,
-              rendererName
+              rendererName,
             );
 
             // Validate the HTML
