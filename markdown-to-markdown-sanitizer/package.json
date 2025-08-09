@@ -78,5 +78,6 @@
     "ai": {
       "optional": true
     }
-  }
+  },
+  "packageManager": "pnpm@10.14.0"
 }
