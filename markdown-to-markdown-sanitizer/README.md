@@ -52,10 +52,16 @@ The last step is causing the reduced readability of the output (see trade-off do
 but it robustly avoids parsing ambiguities Backslash-based escaping has proven to lead to parsing
 ambiguities between implementations.
 
-## Prefix quality
+## Secure prefixes
 
 This package validates URL prefixes and URL origins. Prefix allow-lists can be circumvented
 with open redirects, so make sure to make the prefixes are specific enough to avoid such attacks.
+
+E.g. it is more secure to allow `https://example.com/images/` than it is to allow all of
+`https://example.com/` which may contain open redirects.
+
+Additionally, URLs may contain path traversal like `/../`. This package does not resolve these.
+It is your responsibility that your web server does not allow such traversal.
 
 ## Features
 
