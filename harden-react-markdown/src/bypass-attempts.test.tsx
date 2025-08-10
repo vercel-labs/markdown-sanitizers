@@ -10,6 +10,60 @@ import path from "path";
 // Create the hardened version using our function
 const HardenedReactMarkdown = hardenReactMarkdown(ReactMarkdown);
 
+const allowedElements = new Set(
+  [
+    "a",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "p",
+    "img",
+    "ul",
+    "ol",
+    "li",
+    "blockquote",
+    "code",
+    "pre",
+    "hr",
+    "table",
+    "tbody",
+    "thead",
+    "tfoot",
+    "tr",
+    "td",
+    "th",
+    "span",
+    "br",
+    "div",
+    "html",
+    "body",
+    "head",
+    "strong",
+    "em",
+    "b",
+    "i",
+    "u",
+    "s",
+    "sup",
+    "sub",
+    "small",
+    "big",
+  ].map((element) => element.toUpperCase()),
+);
+
+const allowedAttributes = new Set([
+  "href",
+  "src",
+  "alt",
+  "title",
+  "class",
+  "target",
+  "rel",
+]);
+
 describe("Harden React Markdown Bypass Attempts", () => {
   const trustedOrigins = [
     "https://example.com/",
@@ -73,26 +127,28 @@ describe("Harden React Markdown Bypass Attempts", () => {
       }
     });
 
-    // Check for event handlers
     const allElements = document.querySelectorAll("*");
     allElements.forEach((element) => {
       const attributes = element.attributes;
       for (let i = 0; i < attributes.length; i++) {
         const attr = attributes[i];
-        if (attr.name.startsWith("on")) {
+        if (!allowedAttributes.has(attr.name.toLowerCase())) {
           issues.push(
-            `Event handler found: ${attr.name}="${attr.value}": ${element.outerHTML}`,
+            `Illegal attribute found: ${attr.name}="${attr.value}": ${element.outerHTML}`,
           );
         }
       }
     });
 
-    // Check for script tags
-    const scripts = document.querySelectorAll("script");
-    if (scripts.length > 0) {
+    const forbiddenElements = Array.from(document.querySelectorAll("*")).filter(
+      (element) => !allowedElements.has(element.tagName),
+    );
+    if (forbiddenElements.length > 0) {
       issues.push(
-        `Script tags found: ${scripts.length}: ${Array.from(scripts)
-          .map((script) => script.outerHTML)
+        `Forbidden elements found: ${forbiddenElements
+          .map((element) => element.tagName)
+          .join(", ")}: ${forbiddenElements
+          .map((element) => element.outerHTML)
           .join("\n")}`,
       );
     }
