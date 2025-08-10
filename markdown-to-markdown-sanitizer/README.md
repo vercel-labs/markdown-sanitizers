@@ -52,6 +52,11 @@ The last step is causing the reduced readability of the output (see trade-off do
 but it robustly avoids parsing ambiguities Backslash-based escaping has proven to lead to parsing
 ambiguities between implementations.
 
+## Prefix quality
+
+This package validates URL prefixes and URL origins. Prefix allow-lists can be circumvented
+with open redirects, so make sure to make the prefixes are specific enough to avoid such attacks.
+
 ## Features
 
 - **URL Sanitization**: Filters `href` and `src` attributes against configurable prefix allow-lists
