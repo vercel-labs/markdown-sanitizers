@@ -235,4 +235,46 @@ describe("Harden React Markdown Bypass Attempts", () => {
       });
     });
   });
+
+  describe("Sanity checks of validateHtml", () => {
+    test("should detect script tags", () => {
+      const html = "<script>alert('xss')</script>";
+      const issues = validateHtml(html);
+      expect(issues.join(",")).toEqual(
+        "Forbidden elements found: SCRIPT: <script>alert('xss')</script>",
+      );
+    });
+
+    test("should detect style tags", () => {
+      const html = "<style>body { background-color: red; }</style>";
+      const issues = validateHtml(html);
+      expect(issues.join(",")).toEqual(
+        "Forbidden elements found: STYLE: <style>body { background-color: red; }</style>",
+      );
+    });
+
+    test("should detect iframe tags", () => {
+      const html = "<iframe src='https://example.com'></iframe>";
+      const issues = validateHtml(html);
+      expect(issues.join(",")).toEqual(
+        `Forbidden elements found: IFRAME: <iframe src="https://example.com"></iframe>`,
+      );
+    });
+
+    test("should detect bad attributes", () => {
+      const html = "<h1 onclick='alert(\"xss\")'>Hello</h1>";
+      const issues = validateHtml(html);
+      expect(issues.join(",")).toEqual(
+        `Illegal attribute found: onclick="alert("xss")": <h1 onclick="alert(&quot;xss&quot;)">Hello</h1>`,
+      );
+    });
+
+    test("should detect bad image src", () => {
+      const html = "<img src='https://evil.com/xss.png'>";
+      const issues = validateHtml(html);
+      expect(issues.join(",")).toEqual(
+        `Dangerous src attribute found: https://evil.com/xss.png (untrusted origin): <img src="https://evil.com/xss.png">`,
+      );
+    });
+  });
 });
