@@ -6,6 +6,11 @@ markdown does not contain images from and links to unexpected origins.
 This is particularly important for markdown returned from [LLMs in AI agents which might have been subject to prompt
 injection](https://vercel.com/blog/building-secure-ai-agents).
 
+## Prefix quality
+
+This package validates URL prefixes and URL origins. Prefix allow-lists can be circumvented
+with open redirects, so make sure to make the prefixes are specific enough to avoid such attacks.
+
 ## Features
 
 - 🔒 **URL Filtering**: Blocks links and images that don't match allowed URL prefixes
