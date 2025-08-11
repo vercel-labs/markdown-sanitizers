@@ -15,7 +15,7 @@ describe("Configuration Options", () => {
       const result = sanitizer.sanitize(input);
 
       expect(result).toBe(
-        "[Link](https://links.com/page) ![Image](https://images.com/pic.jpg)\n"
+        "[Link](https://links.com/page) ![](https://images.com/pic.jpg)\n"
       );
     });
 
@@ -42,7 +42,7 @@ describe("Configuration Options", () => {
       const input = "![Image](https://blocked-images.com/pic.jpg)";
       const result = sanitizer.sanitize(input);
 
-      expect(result).toBe("![Image](/forbidden)\n");
+      expect(result).toBe("![](/forbidden)\n");
     });
 
     test("handles protocol-only prefixes", () => {
@@ -87,7 +87,7 @@ describe("Configuration Options", () => {
       const result = sanitizer.sanitize(input);
 
       expect(result).toBe(
-        "[Relative](https://mysite.com/page) ![Relative](https://mysite.com/image.jpg)\n"
+        "[Relative](https://mysite.com/page) ![](https://mysite.com/image.jpg)\n"
       );
     });
 
@@ -116,7 +116,7 @@ describe("Configuration Options", () => {
       const input = "![Relative](/image.jpg)";
       const result = sanitizer.sanitize(input);
 
-      expect(result).toBe("![Relative](https://cdn.example.com/image.jpg)\n");
+      expect(result).toBe("![](https://cdn.example.com/image.jpg)\n");
     });
 
     test("overrides defaultOrigin with specific origins", () => {
@@ -132,7 +132,7 @@ describe("Configuration Options", () => {
       const result = sanitizer.sanitize(input);
 
       expect(result).toBe(
-        "[Link](https://links.example.com/page) ![Image](https://images.example.com/pic.jpg)\n"
+        "[Link](https://links.example.com/page) ![](https://images.example.com/pic.jpg)\n"
       );
     });
   });
@@ -175,7 +175,7 @@ describe("Configuration Options", () => {
       const input = "![Image](https://example.com/image.jpg)";
       const result = sanitizer.sanitize(input);
 
-      expect(result).toContain("![Image](/forbidden)");
+      expect(result).toContain("![](/forbidden)");
     });
 
     test("blocks all links when allowedLinkPrefixes is empty array", () => {
@@ -201,7 +201,7 @@ describe("Configuration Options", () => {
       const input = "![GitHub](https://github.com/image.png) ![Example](https://example.com/image.jpg) ![Relative](/image.svg)";
       const result = sanitizer.sanitize(input);
 
-      expect(result).toBe("![GitHub](/forbidden) ![Example](/forbidden) ![Relative](/forbidden)\n");
+      expect(result).toBe("![](/forbidden) ![](/forbidden) ![](/forbidden)\n");
     });
 
     test("blocks both links and images when both allow-lists are empty", () => {
@@ -220,9 +220,9 @@ describe("Configuration Options", () => {
       const result = sanitizer.sanitize(input);
 
       expect(result).toContain("[GitHub Link](#)");
-      expect(result).toContain("![GitHub Image](/forbidden)");
+      expect(result).toContain("![](/forbidden)");
       expect(result).toContain("[Relative Link](#)");
-      expect(result).toContain("![Relative Image](/forbidden)");
+      expect(result).toContain("![](/forbidden)");
     });
 
     test("handles undefined allowedLinkPrefixes", () => {
@@ -246,7 +246,7 @@ describe("Configuration Options", () => {
       const input = "![Image](https://example.com/image.jpg)";
       const result = sanitizer.sanitize(input);
 
-      expect(result).toContain("![Image](/forbidden)");
+      expect(result).toContain("![](/forbidden)");
     });
   });
 
@@ -359,7 +359,7 @@ describe("Configuration Options", () => {
       });
 
       expect(result).toContain("[Link](https://example.com/page)");
-      expect(result).toContain("![Image](/forbidden)");
+      expect(result).toContain("![](/forbidden)");
     });
   });
 });

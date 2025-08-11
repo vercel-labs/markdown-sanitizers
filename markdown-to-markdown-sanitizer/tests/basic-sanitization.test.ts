@@ -52,26 +52,26 @@ describe("Basic Markdown Sanitization", () => {
     test("allows trusted images", () => {
       const input = "![Alt text](https://images.com/photo.jpg)";
       const result = sanitize(input);
-      expect(result).toBe("![Alt text](https://images.com/photo.jpg)\n");
+      expect(result).toBe("![](https://images.com/photo.jpg)\n");
     });
 
     test("blocks untrusted images", () => {
       const input = "![Evil](https://evil.com/tracker.gif)";
       const result = sanitize(input);
-      expect(result).toBe("![Evil](/forbidden)\n");
+      expect(result).toBe("![](/forbidden)\n");
     });
 
     test("handles relative image paths", () => {
       const input = "![Local](/images/local.png)";
       const result = sanitize(input);
-      expect(result).toBe("![Local](https://example.com/images/local.png)\n");
+      expect(result).toBe("![](https://example.com/images/local.png)\n");
     });
 
-    test("preserves alt text even when image is blocked", () => {
+    test("removes alt text when image is blocked", () => {
       const input = "![Important Image](data:image/gif;base64,R0lGOD)";
       const result = sanitize(input);
-      // data: URLs are sanitized to /forbidden, preserving alt text
-      expect(result).toBe("![Important Image](/forbidden)\n");
+      // data: URLs are sanitized to /forbidden, alt text is removed for security
+      expect(result).toBe("![](/forbidden)\n");
     });
   });
 
@@ -85,7 +85,7 @@ Also a bad [link](https://evil.com) and bad ![image](https://evil.com/tracker.gi
 
       const result = sanitize(input);
       expect(result).toBe(
-        "# Title\n\nHere is a [link](https://example.com/page) and an image ![img](https://images.com/pic.jpg)&2e;\n\nAlso a bad [link](#) and bad ![image](/forbidden)&2e;\n",
+        "# Title\n\nHere is a [link](https://example.com/page) and an image ![](https://images.com/pic.jpg)&2e;\n\nAlso a bad [link](#) and bad ![](/forbidden)&2e;\n",
       );
     });
   });

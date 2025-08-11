@@ -109,9 +109,9 @@ And here&27;s an ordered list&3a;
 
 Check out our [main website](https://example.com/) for more information&2e; You can also view our [GitHub repository](https://github.com/example/repo) for the source code&2e;
 
-Here&27;s an image&3a; ![Example diagram](https://example.com/images/diagram.png)
+Here&27;s an image&3a; ![](https://example.com/images/diagram.png)
 
-And another image with alt text&3a; ![Chart showing growth](https://cdn.example.com/charts/growth.jpg)
+And another image with alt text&3a; ![](https://cdn.example.com/charts/growth.jpg)
 
 ## Code Examples
 

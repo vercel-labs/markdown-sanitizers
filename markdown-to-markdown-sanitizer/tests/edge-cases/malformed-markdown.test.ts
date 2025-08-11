@@ -69,7 +69,7 @@ describe("Malformed Markdown Edge Cases", () => {
       const input = "![Alt [with nested] brackets](https://images.com/pic.jpg)";
       const result = sanitize(input);
       expect(result).toBe(
-        "![Alt with nested brackets](https://images.com/pic.jpg)\n"
+        "![](https://images.com/pic.jpg)\n"
       );
     });
 
@@ -77,7 +77,7 @@ describe("Malformed Markdown Edge Cases", () => {
       const input = "!![Double exclamation](https://images.com/pic.jpg)";
       const result = sanitize(input);
       expect(result).toBe(
-        "&21;![Double exclamation](https://images.com/pic.jpg)\n"
+        "&21;![](https://images.com/pic.jpg)\n"
       );
     });
   });

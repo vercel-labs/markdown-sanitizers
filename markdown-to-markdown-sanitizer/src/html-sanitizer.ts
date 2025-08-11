@@ -158,11 +158,11 @@ export class HtmlSanitizer {
         node.setAttribute("src", sanitizedUrl);
       }
 
-      function sanitizeAttributeValue(value: string) {
-        // If value contains HTML-like content, remove it.
-        // We cannot find a safe way to escape it across parsers.
-        return value.replace(/[<>="'\[\]]/g, "");
-      }
+      const sanitizeAttributeValue = (_: string) => {
+        // Title and alt parsing is too ambiguous. We need to fully remove it
+
+        return "";
+      };
 
       // Handle alt attributes that might contain HTML
       if (node.hasAttribute && node.hasAttribute("alt")) {

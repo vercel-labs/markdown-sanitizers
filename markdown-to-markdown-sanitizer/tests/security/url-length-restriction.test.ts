@@ -43,7 +43,7 @@ describe("URL Length Restriction", () => {
       const longPath = "a".repeat(201 - "https://images.com/".length);
       const input = `![Image](https://images.com/${longPath})`;
       const result = sanitize(input);
-      expect(result).toBe("![Image](/forbidden)\n");
+      expect(result).toBe("![](/forbidden)\n");
     });
 
     test("blocks URLs over 200 characters in HTML links", () => {
@@ -57,7 +57,7 @@ describe("URL Length Restriction", () => {
       const longPath = "a".repeat(201 - "https://images.com/".length);
       const input = `<img src="https://images.com/${longPath}" alt="Image">`;
       const result = sanitize(input);
-      expect(result).toBe("![Image](/forbidden)\n");
+      expect(result).toBe("![](/forbidden)\n");
     });
   });
 

@@ -69,7 +69,7 @@ describe("Weird Parsing Edge Cases", () => {
         "[a](https://example.com) ![b](https://images.com/c.jpg) *d* **e**";
       const result = sanitize(input);
       expect(result).toBe(
-        "[a](https://example.com/) ![b](https://images.com/c.jpg) *d* **e**\n",
+        "[a](https://example.com/) ![](https://images.com/c.jpg) *d* **e**\n",
       );
     });
 
@@ -78,7 +78,7 @@ describe("Weird Parsing Edge Cases", () => {
         "[Link1](https://example.com)[Link2](https://trusted.org)![Img](https://images.com/pic.jpg)";
       const result = sanitize(input);
       expect(result).toBe(
-        "[Link1](https://example.com/)[Link2](https://trusted.org/)![Img](https://images.com/pic.jpg)\n",
+        "[Link1](https://example.com/)[Link2](https://trusted.org/)![](https://images.com/pic.jpg)\n",
       );
     });
   });
