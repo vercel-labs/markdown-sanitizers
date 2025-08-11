@@ -20,7 +20,7 @@ describe("Parser Confusion Tests", () => {
         '<a href="https://example.com" title="Click [here](javascript:alert())">Link</a>';
       const result = sanitize(input);
       expect(result).toBe(
-        '[Link](https://example.com/ "Click here(javascript:alert())")\n',
+        '[Link](https://example.com/)\n',
       );
     });
 
@@ -29,7 +29,7 @@ describe("Parser Confusion Tests", () => {
         '<img src="https://images.com/pic.jpg" alt="![evil](javascript:alert())">';
       const result = sanitize(input);
       expect(result).toBe(
-        "![!evil(javascript:alert())](https://images.com/pic.jpg)\n",
+        "![](https://images.com/pic.jpg)\n",
       );
     });
 
@@ -74,7 +74,7 @@ describe("Parser Confusion Tests", () => {
         '![<script>alert("xss")</script>Safe image](https://images.com/pic.jpg)';
       const result = sanitize(input);
       expect(result).toBe(
-        "![scriptalert(xss)/scriptSafe image](https://images.com/pic.jpg)\n",
+        "![](https://images.com/pic.jpg)\n",
       );
     });
 
@@ -83,7 +83,7 @@ describe("Parser Confusion Tests", () => {
         '![<iframe src="javascript:alert()"></iframe>Description](https://images.com/pic.jpg)';
       const result = sanitize(input);
       expect(result).toBe(
-        "![iframe srcjavascript:alert()/iframeDescription](https://images.com/pic.jpg)\n",
+        "![](https://images.com/pic.jpg)\n",
       );
     });
 
@@ -92,7 +92,7 @@ describe("Parser Confusion Tests", () => {
         "![<div><p>Text with <strong>bold</strong></p></div>](https://images.com/pic.jpg)";
       const result = sanitize(input);
       expect(result).toBe(
-        "![divpText with strongbold/strong/p/div](https://images.com/pic.jpg)\n",
+        "![](https://images.com/pic.jpg)\n",
       );
     });
   });

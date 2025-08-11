@@ -299,10 +299,22 @@ describe("Markdown Sanitizer Bypass Attempts", () => {
             // Log details for debugging
             if (issues.length > 0) {
               console.log(`\nFile: ${file} | Renderer: ${rendererName}`);
-              console.log("Original markdown:", markdown);
-              console.log("Sanitized markdown:", sanitized);
-              console.log("Rendered HTML:", html);
-              console.log("Issues found:", issues);
+              console.log(
+                "\n\n##########################\nOriginal markdown:",
+                markdown,
+              );
+              console.log(
+                "\n\n##########################\nSanitized markdown:",
+                sanitized,
+              );
+              console.log(
+                "\n\n##########################\nRendered HTML:",
+                html,
+              );
+              console.log(
+                "\n\n##########################\nIssues found:",
+                issues,
+              );
             }
 
             // Assert no dangerous content made it through

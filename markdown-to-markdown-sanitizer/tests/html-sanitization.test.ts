@@ -45,14 +45,14 @@ describe("HTML Sanitization", () => {
       const input = '<img src="https://images.com/safe.jpg" alt="Safe image">';
       const result = sanitize(input);
       expect(result).toBe(
-        '![Safe image](https://images.com/safe.jpg)\n'
+        '![](https://images.com/safe.jpg)\n'
       );
     });
 
     test("sanitizes images with untrusted src", () => {
       const input = '<img src="https://evil.com/tracker.gif" alt="Tracker">';
       const result = sanitize(input);
-      expect(result).toBe("![Tracker](/forbidden)\n");
+      expect(result).toBe("![](/forbidden)\n");
     });
   });
 
@@ -106,7 +106,7 @@ describe("HTML Sanitization", () => {
       const input =
         '<img src="data:text/html,<script>alert(\'xss\')</script>" alt="Data URL attack">';
       const result = sanitize(input);
-      expect(result).toBe("![Data URL attack](/forbidden)\n");
+      expect(result).toBe("![](/forbidden)\n");
     });
 
     test("removes vbscript: URLs", () => {
@@ -120,7 +120,7 @@ describe("HTML Sanitization", () => {
         '<img src="https://images.com/safe.jpg" onload="alert(\'xss\')" alt="Evil image">';
       const result = sanitize(input);
       expect(result).toBe(
-        '![Evil image](https://images.com/safe.jpg)\n'
+        '![](https://images.com/safe.jpg)\n'
       );
     });
 
@@ -129,7 +129,7 @@ describe("HTML Sanitization", () => {
         '<img src="nonexistent.jpg" onerror="alert(\'xss\')" alt="Error handler attack">';
       const result = sanitize(input);
       expect(result).toBe(
-        '![Error handler attack](https://example.com/nonexistent.jpg)\n'
+        '![](https://example.com/nonexistent.jpg)\n'
       );
     });
 
@@ -146,7 +146,7 @@ describe("HTML Sanitization", () => {
         '<img src="https://images.com/photo.jpg" alt="Photo" width="100" height="50">';
       const result = sanitize(input);
       expect(result).toBe(
-        '![Photo](https://images.com/photo.jpg)\n'
+        '![](https://images.com/photo.jpg)\n'
       );
     });
 
@@ -161,7 +161,7 @@ describe("HTML Sanitization", () => {
       const input =
         '<a href="https://evil.com/malware" title="Safe title">Link</a>';
       const result = sanitize(input);
-      expect(result).toBe('[Link](# "Safe title")\n');
+      expect(result).toBe('[Link](#)\n');
     });
   });
 

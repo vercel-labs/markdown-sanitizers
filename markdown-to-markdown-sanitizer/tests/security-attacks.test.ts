@@ -183,7 +183,7 @@ describe("Security Attack Prevention", () => {
         "[File](https://example.com/......%5Cwindows%5Csystem32%5Cconfig%5Csam)\n"
       );
       expect(results[2]).toBe(
-        "![Image](https://example.com/sensitive/image.jpg)\n"
+        "![](https://example.com/sensitive/image.jpg)\n"
       );
     });
 
@@ -214,7 +214,7 @@ describe("Security Attack Prevention", () => {
       // First attack: nested image-link should be sanitized
       expect(results[0]).not.toContain("javascript:");
       expect(results[0]).not.toContain("alert");
-      expect(results[0]).toContain("![Click](https://images.com/safe.jpg)");
+      expect(results[0]).toContain("![](https://images.com/safe.jpg)");
 
       // Second attack: malformed link should be sanitized
       expect(results[1]).not.toContain("javascript:");
@@ -312,9 +312,9 @@ describe("Security Attack Prevention", () => {
 
       const results = attacks.map((attack) => sanitize(attack));
 
-      expect(results[0]).toBe("![Track](/forbidden)\n");
+      expect(results[0]).toBe("![](/forbidden)\n");
       expect(results[1]).toBe("![](/forbidden)\n");
-      expect(results[2]).toBe("![Beacon](/forbidden)\n");
+      expect(results[2]).toBe("![](/forbidden)\n");
     });
 
     test("blocks link-based tracking", () => {
@@ -340,7 +340,7 @@ describe("Security Attack Prevention", () => {
 
       attacks.forEach((attack) => {
         const result = sanitize(attack);
-        expect(result).toBe("![Image](/forbidden)\n");
+        expect(result).toBe("![](/forbidden)\n");
       });
     });
   });
