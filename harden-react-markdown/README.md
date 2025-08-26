@@ -89,15 +89,15 @@ A new component with enhanced security that accepts all original props plus:
 
 - Array of URL prefixes that are allowed for links
 - Links not matching these prefixes will be blocked and shown as `[blocked]`
-- Use `"*"` to allow all URLs (disables filtering)
+- Use `"*"` to allow all URLs (disables filtering. However, `javascript:` and `data:` URLs are always disallowed)
 - Default: `[]` (blocks all links)
-- Example: `['https://github.com/', 'https://docs.']` or `['*']`
+- Example: `['https://github.com/', 'https://docs.example.com/']` or `['*']`
 
 #### `allowedImagePrefixes?: string[]`
 
 - Array of URL prefixes that are allowed for images
 - Images not matching these prefixes will be blocked and shown as placeholders
-- Use `"*"` to allow all URLs (disables filtering)
+- Use `"*"` to allow all URLs (disables filtering. However, `javascript:` and `data:` URLs are always disallowed)
 - Default: `[]` (blocks all images)
 - Example: `['https://via.placeholder.com/', '/']` or `['*']`
 
@@ -190,6 +190,7 @@ const HardenedCustomMarkdown = hardenReactMarkdown(CustomMarkdown);
 - **Relative URLs**: Properly resolves and validates relative URLs against `defaultOrigin`
 - **Path Traversal Protection**: Normalizes URLs to prevent `../` attacks
 - **Wildcard Support**: Use `"*"` prefix to disable filtering (only when markdown is trusted)
+- **Prefix Matching**: Validates that URLs start with allowed prefixes and have matching origins
 
 ### Blocked Content Handling
 

@@ -14,7 +14,7 @@ describe("HardenedMarkdown", () => {
     urlType: "link" | "image",
     badUrls: string[],
     allowedPrefixes: string[],
-    defaultOrigin: string
+    defaultOrigin: string,
   ) => {
     badUrls.forEach((url) => {
       it(`blocks ${urlType} with URL: ${url}`, () => {
@@ -28,7 +28,7 @@ describe("HardenedMarkdown", () => {
             allowedImagePrefixes={urlType === "image" ? allowedPrefixes : []}
           >
             {markdown}
-          </HardenedReactMarkdown>
+          </HardenedReactMarkdown>,
         );
 
         if (urlType === "link") {
@@ -48,10 +48,10 @@ describe("HardenedMarkdown", () => {
         render(
           <HardenedReactMarkdown allowedLinkPrefixes={["https://github.com/"]}>
             {"[Test](https://github.com)"}
-          </HardenedReactMarkdown>
+          </HardenedReactMarkdown>,
         );
       }).toThrow(
-        "defaultOrigin is required when allowedLinkPrefixes or allowedImagePrefixes are provided"
+        "defaultOrigin is required when allowedLinkPrefixes or allowedImagePrefixes are provided",
       );
     });
 
@@ -62,10 +62,10 @@ describe("HardenedMarkdown", () => {
             allowedImagePrefixes={["https://example.com/"]}
           >
             {"![Test](https://example.com/image.jpg)"}
-          </HardenedReactMarkdown>
+          </HardenedReactMarkdown>,
         );
       }).toThrow(
-        "defaultOrigin is required when allowedLinkPrefixes or allowedImagePrefixes are provided"
+        "defaultOrigin is required when allowedLinkPrefixes or allowedImagePrefixes are provided",
       );
     });
 
@@ -74,7 +74,7 @@ describe("HardenedMarkdown", () => {
         render(
           <HardenedReactMarkdown>
             {"[Test](https://github.com)"}
-          </HardenedReactMarkdown>
+          </HardenedReactMarkdown>,
         );
       }).not.toThrow();
     });
@@ -88,7 +88,7 @@ describe("HardenedMarkdown", () => {
           allowedLinkPrefixes={["https://example.com/"]}
         >
           {"[Test](/path/to/page?query=1#hash)"}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       const link = screen.getByRole("link");
@@ -102,7 +102,7 @@ describe("HardenedMarkdown", () => {
           allowedLinkPrefixes={["https://github.com/"]}
         >
           {"[Test](https://github.com/user/repo)"}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       const link = screen.getByRole("link");
@@ -116,7 +116,7 @@ describe("HardenedMarkdown", () => {
           allowedLinkPrefixes={["https://trusted.com/"]}
         >
           {"[Test](/api/data)"}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       const link = screen.getByRole("link");
@@ -130,7 +130,7 @@ describe("HardenedMarkdown", () => {
           allowedLinkPrefixes={["https://trusted.com/"]}
         >
           {"[Test](/api/data)"}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       expect(screen.queryByRole("link")).not.toBeInTheDocument();
@@ -144,7 +144,7 @@ describe("HardenedMarkdown", () => {
           allowedLinkPrefixes={["https://cdn.example.com/"]}
         >
           {"[Test](//cdn.example.com/resource)"}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       const link = screen.getByRole("link");
@@ -159,7 +159,7 @@ describe("HardenedMarkdown", () => {
           allowedLinkPrefixes={["https://github.com/"]}
         >
           {"[Test](https://github.com/../../../evil.com)"}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       // URL normalization resolves to https://github.com/evil.com which is allowed
@@ -199,14 +199,14 @@ describe("HardenedMarkdown", () => {
       "link",
       badLinkUrls,
       ["https://github.com/"],
-      "https://example.com"
+      "https://example.com",
     );
 
     testBlockedUrls(
       "link",
       badLinkUrls,
       ["https://github.com"],
-      "https://example.com"
+      "https://example.com",
     );
   });
 
@@ -227,7 +227,7 @@ describe("HardenedMarkdown", () => {
       "image",
       badImageUrls,
       ["https://trusted.com/"],
-      "https://example.com"
+      "https://example.com",
     );
   });
 
@@ -236,7 +236,7 @@ describe("HardenedMarkdown", () => {
       render(
         <HardenedReactMarkdown defaultOrigin="https://example.com">
           {"[Test]()"}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
       expect(screen.getByText("Test [blocked]")).toBeInTheDocument();
     });
@@ -245,7 +245,7 @@ describe("HardenedMarkdown", () => {
       render(
         <HardenedReactMarkdown defaultOrigin="https://example.com">
           {"![Test]()"}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
       expect(screen.getByText("[Image blocked: Test]")).toBeInTheDocument();
     });
@@ -258,7 +258,7 @@ describe("HardenedMarkdown", () => {
           allowedLinkPrefixes={["https://example.com/"]}
         >
           {markdown}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
       // Numeric URLs resolve to relative paths like /123 which become https://example.com/123
       const link = screen.getByRole("link");
@@ -272,13 +272,13 @@ describe("HardenedMarkdown", () => {
           allowedLinkPrefixes={["https://example.com/"]}
         >
           {"[Test](https://example.com/路径/文件)"}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       const link = screen.getByRole("link");
       expect(link).toHaveAttribute(
         "href",
-        "https://example.com/%E8%B7%AF%E5%BE%84/%E6%96%87%E4%BB%B6"
+        "https://example.com/%E8%B7%AF%E5%BE%84/%E6%96%87%E4%BB%B6",
       );
     });
 
@@ -292,7 +292,7 @@ describe("HardenedMarkdown", () => {
           allowedLinkPrefixes={["https://example.com/"]}
         >
           {markdown}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       const link = screen.getByRole("link");
@@ -304,14 +304,14 @@ describe("HardenedMarkdown", () => {
       render(
         <HardenedReactMarkdown>
           {"# Heading 1\n## Heading 2"}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-        "Heading 1"
+        "Heading 1",
       );
       expect(screen.getByRole("heading", { level: 2 })).toHaveTextContent(
-        "Heading 2"
+        "Heading 2",
       );
     });
 
@@ -319,7 +319,7 @@ describe("HardenedMarkdown", () => {
       render(
         <HardenedReactMarkdown>
           {"This is **bold** and this is *italic*"}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       expect(screen.getByText("bold")).toBeInTheDocument();
@@ -351,7 +351,7 @@ describe("HardenedMarkdown", () => {
 \`\`\`
 block code
 \`\`\``}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       expect(screen.getByText("inline code")).toBeInTheDocument();
@@ -379,7 +379,7 @@ block code
           allowedLinkPrefixes={[]}
         >
           {markdown}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       expect(screen.queryByRole("link")).not.toBeInTheDocument();
@@ -394,7 +394,7 @@ block code
           allowedLinkPrefixes={["https://github.com/"]}
         >
           {markdown}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       const link = screen.getByRole("link");
@@ -415,7 +415,7 @@ block code
           allowedLinkPrefixes={["https://github.com/"]}
         >
           {markdown}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       expect(screen.getByRole("link")).toHaveTextContent("Allowed");
@@ -440,7 +440,7 @@ block code
           ]}
         >
           {markdown}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       const links = screen.getAllByRole("link");
@@ -470,7 +470,7 @@ block code
           allowedImagePrefixes={[]}
         >
           {markdown}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       expect(screen.queryByRole("img")).not.toBeInTheDocument();
@@ -485,7 +485,7 @@ block code
           allowedImagePrefixes={["https://via.placeholder.com/"]}
         >
           {markdown}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       const img = screen.getByRole("img");
@@ -505,7 +505,7 @@ block code
           allowedImagePrefixes={["https://via.placeholder.com/"]}
         >
           {markdown}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       expect(screen.getByRole("img")).toHaveAttribute("alt", "Allowed");
@@ -517,7 +517,7 @@ block code
       render(<HardenedReactMarkdown>{markdown}</HardenedReactMarkdown>);
 
       expect(
-        screen.getByText("[Image blocked: No description]")
+        screen.getByText("[Image blocked: No description]"),
       ).toBeInTheDocument();
     });
 
@@ -529,7 +529,7 @@ block code
           allowedImagePrefixes={["https://example.com/"]}
         >
           {markdown}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       const img = screen.getByRole("img");
@@ -544,7 +544,7 @@ block code
           allowedImagePrefixes={["https://trusted.com/"]}
         >
           {markdown}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       const img = screen.getByRole("img");
@@ -558,7 +558,7 @@ block code
       const { container } = render(
         <HardenedReactMarkdown skipHtml={true} unwrapDisallowed={true}>
           {"# Test with <span>HTML</span>"}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       expect(screen.getByRole("heading", { level: 1 })).toBeInTheDocument();
@@ -574,11 +574,11 @@ block code
       render(
         <HardenedReactMarkdown components={customComponents}>
           {"# Custom Heading"}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       expect(screen.getByTestId("custom-h1")).toHaveTextContent(
-        "Custom Heading"
+        "Custom Heading",
       );
     });
 
@@ -590,7 +590,7 @@ block code
       render(
         <HardenedReactMarkdown components={customComponents}>
           {"[Link](https://example.com)"}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       // Should use hardened component, not custom one, for blocked URLs
@@ -618,7 +618,7 @@ block code
           allowedLinkPrefixes={["https://example.com/"]}
         >
           {"[Link](https://example.com/page)"}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       // Should use custom component with security enhancements
@@ -635,11 +635,11 @@ block code
       render(
         <HardenedReactMarkdown remarkPlugins={[]} rehypePlugins={[]}>
           {"# Test"}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-        "Test"
+        "Test",
       );
     });
   });
@@ -674,19 +674,19 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
           allowedImagePrefixes={["https://via.placeholder.com/"]}
         >
           {markdown}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       // Check allowed content
       expect(
-        screen.getAllByRole("link").map((link) => link.getAttribute("href"))
+        screen.getAllByRole("link").map((link) => link.getAttribute("href")),
       ).toEqual(["https://github.com/repo"]);
       expect(screen.getByRole("img")).toHaveAttribute("alt", "Allowed image");
 
       // Check blocked content
       expect(screen.getByText("blocked link [blocked]")).toBeInTheDocument();
       expect(
-        screen.getByText("[Image blocked: Blocked image]")
+        screen.getByText("[Image blocked: Blocked image]"),
       ).toBeInTheDocument();
     });
   });
@@ -700,7 +700,7 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
           allowedImagePrefixes={["https://trusted.com/"]}
         >
           {markdown}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       const img = screen.getByRole("img");
@@ -715,7 +715,7 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
           allowedImagePrefixes={["https://trusted.com/"]}
         >
           {markdown}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       expect(screen.queryByRole("img")).not.toBeInTheDocument();
@@ -743,7 +743,7 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
           components={{ blockquote: CustomBlockquote }}
         >
           {"> Quote with citation"}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       // The cite attribute would need to be handled in the custom component
@@ -761,7 +761,7 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
       render(
         <HardenedReactMarkdown defaultOrigin="https://example.com">
           {markdown}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       // Both should be blocked
@@ -782,7 +782,7 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
           allowedLinkPrefixes={["https://trusted.com/"]}
         >
           {markdown}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       expect(screen.getByText("Regular markdown content")).toBeInTheDocument();
@@ -798,13 +798,13 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
           allowedImagePrefixes={["https://trusted.com/"]}
         >
           {"![Test](https://trusted.com/../../../evil.com/image.jpg)"}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       const img = screen.getByRole("img");
       expect(img).toHaveAttribute(
         "src",
-        "https://trusted.com/evil.com/image.jpg"
+        "https://trusted.com/evil.com/image.jpg",
       );
     });
 
@@ -819,7 +819,7 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
         const { unmount } = render(
           <HardenedReactMarkdown defaultOrigin="https://example.com">
             {markdown}
-          </HardenedReactMarkdown>
+          </HardenedReactMarkdown>,
         );
 
         // These should be blocked
@@ -845,13 +845,13 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
           allowedLinkPrefixes={["https://github.com/"]}
         >
           {"[Test](https://github.com/user/repo)"}
-        </HardenedCustomMarkdown>
+        </HardenedCustomMarkdown>,
       );
 
       expect(screen.getByTestId("custom-markdown")).toBeInTheDocument();
       expect(screen.getByRole("link")).toHaveAttribute(
         "href",
-        "https://github.com/user/repo"
+        "https://github.com/user/repo",
       );
     });
 
@@ -866,11 +866,11 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
           rehypePlugins={[]}
         >
           {"# Test Heading"}
-        </HardenedMarkdown>
+        </HardenedMarkdown>,
       );
 
       expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-        "Test Heading"
+        "Test Heading",
       );
     });
 
@@ -894,13 +894,13 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
           customProp="test-value"
         >
           {"# Strict Test"}
-        </HardenedStrictMarkdown>
+        </HardenedStrictMarkdown>,
       );
 
       expect(screen.getByTestId("strict-markdown")).toBeInTheDocument();
       expect(screen.getByTestId("custom-prop")).toHaveTextContent("test-value");
       expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-        "Strict Test"
+        "Strict Test",
       );
     });
 
@@ -922,8 +922,59 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
 
       render(<TestWrapper />);
       expect(screen.getByRole("heading", { level: 1 })).toHaveTextContent(
-        "Test"
+        "Test",
       );
+    });
+  });
+
+  describe("URL prefix validation behavior", () => {
+    it("requires complete valid URL prefixes (protocol-only prefixes don't work)", () => {
+      // This test demonstrates that "https://" alone doesn't work as a prefix
+      render(
+        <HardenedReactMarkdown
+          defaultOrigin="https://example.com"
+          allowedLinkPrefixes={["https://"]}
+        >
+          {"[Test Link](https://github.com/test)"}
+        </HardenedReactMarkdown>,
+      );
+
+      // The link should be blocked because "https://" cannot be parsed as a valid URL
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
+      expect(screen.getByText("Test Link [blocked]")).toBeInTheDocument();
+    });
+
+    it("works with complete domain prefixes", () => {
+      render(
+        <HardenedReactMarkdown
+          defaultOrigin="https://example.com"
+          allowedLinkPrefixes={["https://github.com/"]}
+        >
+          {"[Test Link](https://github.com/user/repo)"}
+        </HardenedReactMarkdown>,
+      );
+
+      const link = screen.getByRole("link");
+      expect(link).toHaveAttribute("href", "https://github.com/user/repo");
+    });
+
+    it("requires origin and prefix to match for validation", () => {
+      render(
+        <HardenedReactMarkdown
+          defaultOrigin="https://example.com"
+          allowedLinkPrefixes={["https://github.com/user/"]}
+        >
+          {
+            "[Allowed](https://github.com/user/repo) [Blocked](https://github.com/other/repo)"
+          }
+        </HardenedReactMarkdown>,
+      );
+
+      // Only the first link should be rendered since it matches the prefix
+      const links = screen.getAllByRole("link");
+      expect(links).toHaveLength(1);
+      expect(links[0]).toHaveAttribute("href", "https://github.com/user/repo");
+      expect(screen.getByText("Blocked [blocked]")).toBeInTheDocument();
     });
   });
 
@@ -955,7 +1006,7 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
             allowedLinkPrefixes={["*"]}
           >
             {`[Test Link](${input})`}
-          </HardenedReactMarkdown>
+          </HardenedReactMarkdown>,
         );
 
         const link = screen.getByRole("link");
@@ -980,7 +1031,7 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
             allowedImagePrefixes={["*"]}
           >
             {`![Test Image](${url})`}
-          </HardenedReactMarkdown>
+          </HardenedReactMarkdown>,
         );
 
         const img = screen.getByRole("img");
@@ -997,12 +1048,12 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
           allowedLinkPrefixes={["*"]}
         >
           {"[Relative Link](/internal-page)"}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       expect(screen.getByRole("link")).toHaveAttribute(
         "href",
-        "/internal-page"
+        "/internal-page",
       );
       unmount1();
 
@@ -1012,12 +1063,12 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
           allowedImagePrefixes={["*"]}
         >
           {"![Relative Image](/images/logo.png)"}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       expect(screen.getByRole("img")).toHaveAttribute(
         "src",
-        "/images/logo.png"
+        "/images/logo.png",
       );
       unmount2();
     });
@@ -1029,12 +1080,12 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
           allowedLinkPrefixes={["https://github.com/", "*"]}
         >
           {"[Any Link](https://random-site.com/path)"}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       expect(screen.getByRole("link")).toHaveAttribute(
         "href",
-        "https://random-site.com/path"
+        "https://random-site.com/path",
       );
     });
 
@@ -1045,12 +1096,12 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
           allowedLinkPrefixes={["*"]}
         >
           {"[Test](//example.com/protocol-relative)"}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       expect(screen.getByRole("link")).toHaveAttribute(
         "href",
-        "/protocol-relative"
+        "/protocol-relative",
       );
     });
 
@@ -1061,13 +1112,13 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
           allowedLinkPrefixes={["*"]}
         >
           {"[Test](invalid-url-without-protocol)"}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       // With defaultOrigin, this gets resolved to an absolute URL
       expect(screen.getByRole("link")).toHaveAttribute(
         "href",
-        "https://example.com/invalid-url-without-protocol"
+        "https://example.com/invalid-url-without-protocol",
       );
     });
 
@@ -1075,12 +1126,12 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
       render(
         <HardenedReactMarkdown allowedLinkPrefixes={["*"]}>
           {"[Test](https://example.com/test)"}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
       expect(screen.getByRole("link")).toHaveAttribute(
         "href",
-        "https://example.com/test"
+        "https://example.com/test",
       );
     });
 
@@ -1088,9 +1139,33 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
       render(
         <HardenedReactMarkdown allowedLinkPrefixes={["*"]}>
           {"[Test](ht@tp://not-a-valid-url)"}
-        </HardenedReactMarkdown>
+        </HardenedReactMarkdown>,
       );
 
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
+      expect(screen.getByText("Test [blocked]")).toBeInTheDocument();
+    });
+
+    it("wildcard still blocks javascript: URLs", () => {
+      render(
+        <HardenedReactMarkdown allowedLinkPrefixes={["*"]}>
+          {"[Test](javascript:alert('XSS'))"}
+        </HardenedReactMarkdown>,
+      );
+
+      // Even with wildcard "*", javascript: URLs are blocked because they can't be parsed by URL()
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
+      expect(screen.getByText("Test [blocked]")).toBeInTheDocument();
+    });
+
+    it("wildcard blocks data: URLs", () => {
+      render(
+        <HardenedReactMarkdown allowedLinkPrefixes={["*"]}>
+          {"[Test](data:text/html,123)"}
+        </HardenedReactMarkdown>,
+      );
+
+      // Even with wildcard "*", data: URLs are blocked because they can't be parsed by URL()
       expect(screen.queryByRole("link")).not.toBeInTheDocument();
       expect(screen.getByText("Test [blocked]")).toBeInTheDocument();
     });
