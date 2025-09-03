@@ -26,15 +26,15 @@ type StrictMarkdownComponent<T extends ComponentType<Options>> =
     : never;
 
 export default function hardenReactMarkdown<
-  TMarkdownComponent extends ComponentType<Options>
+  TMarkdownComponent extends ComponentType<Options>,
 >(
-  MarkdownComponent: StrictMarkdownComponent<TMarkdownComponent>
+  MarkdownComponent: StrictMarkdownComponent<TMarkdownComponent>,
 ): ComponentType<
   MarkdownComponentProps<TMarkdownComponent> & HardenReactMarkdownOptions
 > {
   return function HardenedReactMarkdown(
     props: MarkdownComponentProps<TMarkdownComponent> &
-      HardenReactMarkdownOptions
+      HardenReactMarkdownOptions,
   ) {
     const {
       defaultOrigin = "",
@@ -56,7 +56,7 @@ export default function hardenReactMarkdown<
       (hasSpecificLinkPrefixes || hasSpecificImagePrefixes)
     ) {
       throw new Error(
-        "defaultOrigin is required when allowedLinkPrefixes or allowedImagePrefixes are provided"
+        "defaultOrigin is required when allowedLinkPrefixes or allowedImagePrefixes are provided",
       );
     }
 
@@ -87,24 +87,11 @@ export default function hardenReactMarkdown<
 
     const transformUrl = (
       url: unknown,
-      allowedPrefixes: string[]
+      allowedPrefixes: string[],
     ): string | null => {
       if (!url) return null;
       const parsedUrl = parseUrl(url);
       if (!parsedUrl) return null;
-
-      // Check for wildcard - allow all URLs
-      if (allowedPrefixes.includes("*")) {
-        const inputWasRelative = isPathRelativeUrl(url);
-        const urlString = parseUrl(url);
-        if (urlString) {
-          if (inputWasRelative) {
-            return urlString.pathname + urlString.search + urlString.hash;
-          }
-          return urlString.href;
-        }
-        return null;
-      }
 
       // If the input is path relative, we output a path relative URL as well,
       // however, we always run the same checks on an absolute URL and we
@@ -129,6 +116,20 @@ export default function hardenReactMarkdown<
           return urlString.pathname + urlString.search + urlString.hash;
         }
         return urlString.href;
+      }
+      // Check for wildcard - allow all URLs
+      if (allowedPrefixes.includes("*")) {
+        // Wildcard only allows http and https URLs
+        if (parsedUrl.protocol !== "https:" && parsedUrl.protocol !== "http:") {
+          return null;
+        }
+        const inputWasRelative = isPathRelativeUrl(url);
+        if (parsedUrl) {
+          if (inputWasRelative) {
+            return parsedUrl.pathname + parsedUrl.search + parsedUrl.hash;
+          }
+          return parsedUrl.href;
+        }
       }
       return null;
     };
