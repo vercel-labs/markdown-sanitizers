@@ -1153,7 +1153,6 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
         </HardenedReactMarkdown>,
       );
 
-      // Even with wildcard "*", javascript: URLs are blocked because they can't be parsed by URL()
       expect(screen.queryByRole("link")).not.toBeInTheDocument();
       expect(screen.getByText("Test [blocked]")).toBeInTheDocument();
     });
@@ -1165,7 +1164,42 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
         </HardenedReactMarkdown>,
       );
 
-      // Even with wildcard "*", data: URLs are blocked because they can't be parsed by URL()
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
+      expect(screen.getByText("Test [blocked]")).toBeInTheDocument();
+    });
+
+    it("wildcard still blocks javascript: URLs (with identity transform)", () => {
+      render(
+        <HardenedReactMarkdown
+          allowedLinkPrefixes={["*"]}
+          urlTransform={
+            (url) => url
+            /* We add the noop because we want to validate that the invariant is true even when 
+               the transform is the identity function */
+          }
+        >
+          {"[Test](javascript:alert('XSS'))"}
+        </HardenedReactMarkdown>,
+      );
+
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
+      expect(screen.getByText("Test [blocked]")).toBeInTheDocument();
+    });
+
+    it("wildcard blocks data: URLs (with identity transform)", () => {
+      render(
+        <HardenedReactMarkdown
+          allowedLinkPrefixes={["*"]}
+          urlTransform={
+            (url) => url
+            /* We add the noop because we want to validate that the invariant is true even when 
+               the transform is the identity function */
+          }
+        >
+          {"[Test](data:text/html,123)"}
+        </HardenedReactMarkdown>,
+      );
+
       expect(screen.queryByRole("link")).not.toBeInTheDocument();
       expect(screen.getByText("Test [blocked]")).toBeInTheDocument();
     });
