@@ -149,6 +149,14 @@ interface SanitizeOptions {
    * Default is 100000 characters. 0 means no limit.
    */
   maxMarkdownLength?: number;
+
+  /**
+   * Activates sanization designed to be safe in commonmark.
+   * Notably, this is what Github uses and it is needed to avoid GitHub rendering HTML entities.
+   * The output is less encoded and relies heavier on the markdown parsing to be correct.
+   * Default is false.
+   */
+  sanitizeForCommonmark?: boolean;
 }
 ```
 

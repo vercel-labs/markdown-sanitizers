@@ -121,6 +121,13 @@ describe("Markdown Sanitizer Bypass Attempts", () => {
       const parsed = parser.parse(markdown);
       return renderer.render(parsed);
     },
+
+    commonmarkWithCommonmarkEscape: async (markdown: string) => {
+      const parser = new CommonMarkParser();
+      const renderer = new HtmlRenderer({ safe: false });
+      const parsed = parser.parse(markdown);
+      return renderer.render(parsed);
+    },
   };
 
   const sanitizeAndRenderToHtml = async (
@@ -280,6 +287,8 @@ describe("Markdown Sanitizer Bypass Attempts", () => {
 
     const rendererNames = Object.keys(renderers);
 
+    let ranCommonMarkEscapeTest = false;
+
     files.forEach((file) => {
       describe(file, () => {
         rendererNames.forEach((rendererName) => {
@@ -287,10 +296,20 @@ describe("Markdown Sanitizer Bypass Attempts", () => {
             const filePath = path.join(bypassDir, file);
             const markdown = fs.readFileSync(filePath, "utf-8");
 
+            const sanitizeOptions =
+              rendererName === "commonmarkWithCommonmarkEscape"
+                ? { sanitizeForCommonmark: true }
+                : {};
+
+            if (sanitizeOptions.sanitizeForCommonmark) {
+              ranCommonMarkEscapeTest = true;
+            }
+
             // Sanitize and render to HTML using specific renderer
             const { html, sanitized } = await sanitizeAndRenderToHtml(
               markdown,
               rendererName,
+              sanitizeOptions,
             );
 
             // Validate the HTML
@@ -322,6 +341,9 @@ describe("Markdown Sanitizer Bypass Attempts", () => {
           });
         });
       });
+    });
+    test("should have run the commonmark escape test", () => {
+      expect(ranCommonMarkEscapeTest).toBe(true);
     });
   });
 
