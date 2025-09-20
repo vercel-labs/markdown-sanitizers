@@ -147,6 +147,8 @@ const createVisitor = (
       if (transformedUrl === null) {
         // @ts-expect-error
         node[SEEN] = true;
+        // We need to eagery visit children so that we catch any nested nastiness as well,
+        // prior to modifying the node's parent.
         visit(node, visitor);
         if (parent && typeof index === "number") {
           parent.children[index] = {
