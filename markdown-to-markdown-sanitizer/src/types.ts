@@ -31,4 +31,12 @@ export interface SanitizeOptions {
    * Without this, all relative URLs will be rejected for security.
    */
   defaultOrigin: string;
+  /**
+   * Activates sanization designed to be safe in commonmark.
+   * Notably, this is what Github uses.
+   * The output is less encoded and relies heavier on the markdown
+   * parsing to be correct.
+   * Default is false.
+   */
+  sanitizeForCommonmark?: boolean;
 }

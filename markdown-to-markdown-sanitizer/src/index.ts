@@ -13,6 +13,54 @@ import { SanitizeOptions } from "./types.js";
 // Re-export types for convenience
 export type { SanitizeOptions, HtmlSanitizeOptions } from "./types.js";
 
+export function commonmarkEscape(str: string): string {
+  const markdownSyntaxCharacters = "!\"#$%&'()*+,-./:;<=>?@[\\]^_`{|}~";
+  // From the CommonMark spec 0.31.2 section 2.4:
+  // Any ASCII punctuation character may be backslash-escaped.
+  // Backslashes before other characters are treated as literal backslashes.
+  // If a backslash is itself escaped, the following character is not escaped.
+
+  let result = "";
+  let i = 0;
+
+  while (i < str.length) {
+    const char = str[i];
+
+    if (char === "\\") {
+      // Check if this is an escaped backslash (\\)
+      if (i + 1 < str.length && str[i + 1] === "\\") {
+        // This is an escaped backslash - keep both backslashes
+        result += "\\\\";
+        i += 2;
+        continue;
+      }
+
+      // Check if the next character is escapable (a punctuation character)
+      if (i + 1 < str.length && markdownSyntaxCharacters.includes(str[i + 1])) {
+        // Valid escape sequence - keep the backslash and the character as is
+        result += str[i] + str[i + 1];
+        i += 2;
+        continue;
+      }
+
+      // Backslash before non-escapable character - treat backslash as literal
+      // Don't escape it, just add it as is
+      result += char;
+      i++;
+    } else if (markdownSyntaxCharacters.includes(char)) {
+      // Escape special markdown characters
+      result += "\\" + char;
+      i++;
+    } else {
+      // Regular character
+      result += char;
+      i++;
+    }
+  }
+
+  return result;
+}
+
 export class MarkdownSanitizer {
   private options: SanitizeOptions;
   private markdownToHtmlProcessor: ReturnType<typeof unified>;
@@ -45,6 +93,9 @@ export class MarkdownSanitizer {
     });
     const defaultEscape = this.htmlToMarkdownProcessor.escape;
     this.htmlToMarkdownProcessor.escape = (str: string) => {
+      if (this.options.sanitizeForCommonmark) {
+        return commonmarkEscape(str);
+      }
       const markdownSyntaxCharacters = /[\<\>\&\"\'\[\]\:\=\/\!\(\)\\\@\.]/g;
       // If anything dangerous is found, encode it using HTML entities which
       // are supported by markdown.
