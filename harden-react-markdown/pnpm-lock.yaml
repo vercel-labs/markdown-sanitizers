@@ -7,6 +7,10 @@ settings:
 importers:
 
   .:
+    dependencies:
+      rehype-harden:
+        specifier: file:../rehype-harden
+        version: file:../rehype-harden
     devDependencies:
       '@testing-library/jest-dom':
         specifier: ^6.6.4
@@ -989,6 +993,9 @@ packages:
   redent@3.0.0:
     resolution: {integrity: sha512-6tDA8g98We0zd0GvVeMT9arEOnTw9qM03L9cJXaCjrip1OO764RDBLBfrB4cwzNGDj5OA5ioymC9GkizgWJDUg==}
     engines: {node: '>=8'}
+
+  rehype-harden@file:../rehype-harden:
+    resolution: {directory: ../rehype-harden, type: directory}
 
   remark-parse@11.0.0:
     resolution: {integrity: sha512-FCxlKLNGknS5ba/1lmpYijMUzX2esxW5xQqjWxw2eHFfS2MSdaHVINFmhjo+qN1WhZhNimq0dZATN9pH0IDrpA==}
@@ -2280,6 +2287,8 @@ snapshots:
     dependencies:
       indent-string: 4.0.0
       strip-indent: 3.0.0
+
+  rehype-harden@file:../rehype-harden: {}
 
   remark-parse@11.0.0:
     dependencies:

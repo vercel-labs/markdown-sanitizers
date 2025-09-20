@@ -36,6 +36,9 @@
     "react": ">=16.8.0",
     "react-markdown": ">=9.0.0"
   },
+  "dependencies": {
+    "rehype-harden": "file:../rehype-harden"
+  },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.4",
     "@testing-library/react": "^16.3.0",
