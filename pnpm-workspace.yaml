@@ -1,0 +1,6 @@
+packages:
+  - "./harden-react-markdown"
+  - "./markdown-to-markdown-sanitizer"
+  - "./rehype-harden"
+
+minimumReleaseAge: 1440

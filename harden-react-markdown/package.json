@@ -8,6 +8,7 @@
     "dist"
   ],
   "scripts": {
+    "check": "tsc --noEmit",
     "build": "tsc",
     "test": "vitest --run",
     "test:watch": "vitest --watch",
@@ -37,7 +38,7 @@
     "react-markdown": ">=9.0.0"
   },
   "dependencies": {
-    "rehype-harden": "file:../rehype-harden"
+    "rehype-harden": "workspace:*"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.4",

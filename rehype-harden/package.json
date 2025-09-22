@@ -8,6 +8,7 @@
     "dist"
   ],
   "scripts": {
+    "check": "tsc --noEmit",
     "build": "tsc",
     "test": "vitest --run",
     "test:watch": "vitest --watch",
@@ -28,7 +29,8 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/vercel-labs/markdown-sanitizers.git"
+    "url": "git+https://github.com/vercel-labs/markdown-sanitizers.git",
+    "directory": "rehype-harden"
   },
   "bugs": {
     "url": "https://github.com/vercel-labs/markdown-sanitizers/issues"

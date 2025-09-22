@@ -18,9 +18,9 @@
     "test:coverage": "vitest run --coverage",
     "lint": "eslint src --ext .ts",
     "lint:tests": "eslint tests --ext .ts",
-    "check-types": "tsc --noEmit",
-    "check-types:tests": "tsc --noEmit -p tsconfig.test.json",
-    "check-types:all": "pnpm run check-types && pnpm run check-types:tests",
+    "check": "tsc --noEmit",
+    "check:tests": "tsc --noEmit -p tsconfig.test.json",
+    "check:all": "pnpm run check && pnpm run check:tests",
     "prepublishOnly": "pnpm run build && pnpm test"
   },
   "keywords": [
