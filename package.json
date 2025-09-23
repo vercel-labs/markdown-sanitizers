@@ -1,13 +1,20 @@
 {
   "name": "markdown-sanitizers",
+  "private": true,
   "version": "1.0.0",
   "description": "",
   "scripts": {
-    "test:harden-react-markdown": "cd harden-react-markdown && pnpm test",
-    "test:markdown-to-markdown-sanitizer": "cd markdown-to-markdown-sanitizer && pnpm test",
-    "test": "pnpm run test:harden-react-markdown && pnpm run test:markdown-to-markdown-sanitizer"
+    "check": "pnpm -r check",
+    "test": "pnpm -r test",
+    "build": "pnpm -r build",
+    "version-packages": "changeset version && pnpm i --no-frozen-lockfile && git add .",
+    "release": "pnpm -r build && changeset publish"
   },
   "keywords": [],
   "author": "",
-  "license": "MIT"
+  "license": "MIT",
+  "packageManager": "pnpm@10.17.1+sha512.17c560fca4867ae9473a3899ad84a88334914f379be46d455cbf92e5cf4b39d34985d452d2583baf19967fa76cb5c17bc9e245529d0b98745721aa7200ecaf7a",
+  "devDependencies": {
+    "@changesets/cli": "^2.29.7"
+  }
 }
