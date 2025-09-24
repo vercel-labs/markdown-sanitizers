@@ -1,6 +1,6 @@
 {
   "name": "markdown-to-markdown-sanitizer",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "A robust markdown sanitizer that produces unambiguous and sanitized markdown output.",
   "type": "module",
   "main": "dist/index.js",

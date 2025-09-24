@@ -1,5 +1,11 @@
 # rehype-harden
 
+## 1.1.2
+
+### Patch Changes
+
+- 9c62787: fix: publish configuration
+
 ## 1.1.1
 
 ### Patch Changes

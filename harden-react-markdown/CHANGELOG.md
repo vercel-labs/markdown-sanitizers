@@ -1,5 +1,13 @@
 # harden-react-markdown
 
+## 1.1.2
+
+### Patch Changes
+
+- 9c62787: fix: publish configuration
+- Updated dependencies [9c62787]
+  - rehype-harden@1.1.2
+
 ## 1.1.1
 
 ### Patch Changes
