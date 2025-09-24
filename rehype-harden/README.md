@@ -1,4 +1,4 @@
-# harden-react-markdown
+# rehype-harden
 
 A rehype plugin that ensures that untrusted markdown does not contain images from and links to unexpected origins.
 
