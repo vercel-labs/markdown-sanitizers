@@ -78,5 +78,8 @@
     "ai": {
       "optional": true
     }
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
