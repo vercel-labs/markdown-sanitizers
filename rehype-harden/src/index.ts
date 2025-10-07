@@ -86,24 +86,23 @@ function transformUrl(
   // always rescronstruct the output from the parsed URL to ensure that
   // the output is always a valid URL.
   const inputWasRelative = isPathRelativeUrl(url);
-  const urlString = parseUrl(url, defaultOrigin);
   if (
-    urlString &&
+    parsedUrl &&
     allowedPrefixes.some((prefix) => {
       const parsedPrefix = parseUrl(prefix, defaultOrigin);
       if (!parsedPrefix) {
         return false;
       }
-      if (parsedPrefix.origin !== urlString.origin) {
+      if (parsedPrefix.origin !== parsedUrl.origin) {
         return false;
       }
-      return urlString.href.startsWith(parsedPrefix.href);
+      return parsedUrl.href.startsWith(parsedPrefix.href);
     })
   ) {
     if (inputWasRelative) {
-      return urlString.pathname + urlString.search + urlString.hash;
+      return parsedUrl.pathname + parsedUrl.search + parsedUrl.hash;
     }
-    return urlString.href;
+    return parsedUrl.href;
   }
 
   // Check for wildcard - allow all URLs
