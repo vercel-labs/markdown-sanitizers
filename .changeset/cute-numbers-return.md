@@ -4,4 +4,4 @@
 "rehype-harden": patch
 ---
 
-allow mailto links in standard configuration
+fix: allow mailto links in standard configuration
