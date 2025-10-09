@@ -1,5 +1,14 @@
 # harden-react-markdown
 
+## 1.1.3
+
+### Patch Changes
+
+- 20d14e4: fix: allow mailto links in standard configuration
+- Updated dependencies [29b9d68]
+- Updated dependencies [20d14e4]
+  - rehype-harden@1.1.3
+
 ## 1.1.2
 
 ### Patch Changes
