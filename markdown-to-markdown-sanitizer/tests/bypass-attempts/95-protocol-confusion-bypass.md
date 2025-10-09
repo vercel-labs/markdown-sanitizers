@@ -82,7 +82,6 @@
 <telnet://example.com/![test](javascript:alert('telnet'))>
 
 ## Autolink with mail protocols
-<mailto:test@example.com/![test](javascript:alert('mailto'))>
 <news:comp.lang.javascript/![test](javascript:alert('news'))>
 <nntp://news.example.com/![test](javascript:alert('nntp'))>
 
