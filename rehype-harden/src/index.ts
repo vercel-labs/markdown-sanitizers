@@ -85,7 +85,7 @@ function transformUrl(
 
   // If the input is path relative, we output a path relative URL as well,
   // however, we always run the same checks on an absolute URL and we
-  // always rescronstruct the output from the parsed URL to ensure that
+  // always reconstruct the output from the parsed URL to ensure that
   // the output is always a valid URL.
   const inputWasRelative = isPathRelativeUrl(url);
   if (
@@ -148,7 +148,7 @@ const createVisitor = (
       if (transformedUrl === null) {
         // @ts-expect-error
         node[SEEN] = true;
-        // We need to eagery visit children so that we catch any nested nastiness as well,
+        // We need to eagerly visit children so that we catch any nested nastiness as well,
         // prior to modifying the node's parent.
         visit(node, visitor);
         if (parent && typeof index === "number") {
