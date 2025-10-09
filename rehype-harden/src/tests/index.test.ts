@@ -254,7 +254,6 @@ describe("rehype-harden", () => {
       "file:///etc/passwd",
       "about:blank",
       "blob:https://example.com/uuid",
-      "mailto:user@example.com",
       "tel:+1234567890",
       "ftp://ftp.example.com/file",
       "../../../etc/passwd",

@@ -81,29 +81,30 @@ function transformUrl(
   if (!parsedUrl) return null;
   if (!safeProtocols.has(parsedUrl.protocol)) return null;
 
+  if (parsedUrl.protocol === "mailto:") return parsedUrl.href;
+
   // If the input is path relative, we output a path relative URL as well,
   // however, we always run the same checks on an absolute URL and we
   // always rescronstruct the output from the parsed URL to ensure that
   // the output is always a valid URL.
   const inputWasRelative = isPathRelativeUrl(url);
-  const urlString = parseUrl(url, defaultOrigin);
   if (
-    urlString &&
+    parsedUrl &&
     allowedPrefixes.some((prefix) => {
       const parsedPrefix = parseUrl(prefix, defaultOrigin);
       if (!parsedPrefix) {
         return false;
       }
-      if (parsedPrefix.origin !== urlString.origin) {
+      if (parsedPrefix.origin !== parsedUrl.origin) {
         return false;
       }
-      return urlString.href.startsWith(parsedPrefix.href);
+      return parsedUrl.href.startsWith(parsedPrefix.href);
     })
   ) {
     if (inputWasRelative) {
-      return urlString.pathname + urlString.search + urlString.hash;
+      return parsedUrl.pathname + parsedUrl.search + parsedUrl.hash;
     }
-    return urlString.href;
+    return parsedUrl.href;
   }
 
   // Check for wildcard - allow all URLs

@@ -3,7 +3,6 @@
 ## Non-HTTP protocols in autolinks
 <ftp://example.com/![test](javascript:alert('ftp-autolink'))>
 <file:///etc/passwd/![test](javascript:alert('file-autolink'))>
-<mailto:test@example.com/![test](javascript:alert('mailto-autolink'))>
 
 ## Protocol case variations in autolinks
 <HTTP://example.com/![test](javascript:alert('http-upper'))>
