@@ -5,12 +5,14 @@ export function harden({
   defaultOrigin = "",
   allowedLinkPrefixes = [],
   allowedImagePrefixes = [],
+  allowDataImages = false,
   blockedImageClass = "inline-block bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-3 py-1 rounded text-sm",
   blockedLinkClass = "text-gray-500",
 }: {
   defaultOrigin?: string;
   allowedLinkPrefixes?: string[];
   allowedImagePrefixes?: string[];
+  allowDataImages?: boolean;
   blockedImageClass?: string;
   blockedLinkClass?: string;
 }) {
@@ -32,6 +34,7 @@ export function harden({
       defaultOrigin,
       allowedLinkPrefixes,
       allowedImagePrefixes,
+      allowDataImages,
       blockedImageClass,
       blockedLinkClass,
     );
@@ -75,18 +78,31 @@ function transformUrl(
   url: unknown,
   allowedPrefixes: string[],
   defaultOrigin: string,
+  allowDataImages: boolean = false,
+  isImage: boolean = false,
 ): string | null {
   if (!url) return null;
 
   // Allow hash-only (fragment-only) URLs - they navigate within the current page
-  // But block fragments that contain dangerous patterns like "javascript:"
-  if (typeof url === "string" && url.startsWith("#")) {
-    // Check if the fragment contains dangerous protocol patterns
-    const dangerousPatterns = /javascript:|data:|vbscript:|file:/i;
-    if (!dangerousPatterns.test(url)) {
+  if (typeof url === "string" && url.startsWith("#") && !isImage) {
+    const parsedURL = parseUrl(url, defaultOrigin);
+    if (parsedURL && parsedURL.hash === url) {
+      // Check if the hash contains dangerous protocol patterns
+      const dangerousPatterns = /javascript:|data:|vbscript:|file:/i;
+      if (!dangerousPatterns.test(url)) {
+        return url;
+      }
+    }
+    // If it's not a valid hash-only URL or contains dangerous patterns, fall through to normal validation
+  }
+
+  // Handle data: URLs for images if allowDataImages is enabled
+  if (typeof url === "string" && url.startsWith("data:")) {
+    // Only allow data: URLs for images when explicitly enabled
+    if (isImage && allowDataImages && url.startsWith("data:image/")) {
       return url;
     }
-    // If it contains dangerous patterns, fall through to normal validation which will reject it
+    return null;
   }
 
   const parsedUrl = parseUrl(url, defaultOrigin);
@@ -139,6 +155,7 @@ const createVisitor = (
   defaultOrigin: string,
   allowedLinkPrefixes: string[],
   allowedImagePrefixes: string[],
+  allowDataImages: boolean,
   blockedImageClass: string,
   blockedLinkClass: string,
 ): BuildVisitor<HastNodes> => {
@@ -156,6 +173,8 @@ const createVisitor = (
         node.properties.href,
         allowedLinkPrefixes,
         defaultOrigin,
+        false,
+        false,
       );
       if (transformedUrl === null) {
         // @ts-expect-error
@@ -194,6 +213,8 @@ const createVisitor = (
         node.properties.src,
         allowedImagePrefixes,
         defaultOrigin,
+        allowDataImages,
+        true,
       );
       if (transformedUrl === null) {
         // @ts-expect-error
