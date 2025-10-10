@@ -85,11 +85,17 @@ function transformUrl(
 
   // Allow hash-only (fragment-only) URLs - they navigate within the current page
   if (typeof url === "string" && url.startsWith("#") && !isImage) {
-    const parsedURL = parseUrl(url, defaultOrigin);
-    if (parsedURL && parsedURL.hash === url) {
-      return url;
+    // Hash-only URLs don't need defaultOrigin validation
+    // Just verify it's a valid fragment identifier
+    try {
+      // Use a dummy base to validate the hash format
+      const testUrl = new URL(url, "http://example.com");
+      if (testUrl.hash === url) {
+        return url;
+      }
+    } catch {
+      // Invalid hash format, fall through to normal validation
     }
-    // If it's not a valid hash-only URL, fall through to normal validation
   }
 
   // Handle data: URLs for images if allowDataImages is enabled
