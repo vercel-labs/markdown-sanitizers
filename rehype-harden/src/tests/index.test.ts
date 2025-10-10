@@ -195,6 +195,28 @@ describe("rehype-harden", () => {
       expect(link!.properties.href).toBe("#top");
     });
 
+    it("allows hash-only anchor links without defaultOrigin", async () => {
+      const tree = await processMarkdown("[Footnote](#footnote-1)", {
+        allowedLinkPrefixes: ["*"],
+      });
+
+      const link = findElement(tree, "a");
+      expect(link).not.toBeNull();
+      expect(link!.properties.href).toBe("#footnote-1");
+      expect(link!.properties.target).toBe("_blank");
+      expect(link!.properties.rel).toBe("noopener noreferrer");
+    });
+
+    it("allows hash-only anchor links with special characters without defaultOrigin", async () => {
+      const tree = await processMarkdown("[Link](#user-content-special-123)", {
+        allowedLinkPrefixes: ["*"],
+      });
+
+      const link = findElement(tree, "a");
+      expect(link).not.toBeNull();
+      expect(link!.properties.href).toBe("#user-content-special-123");
+    });
+
     it("preserves relative URLs when input is relative and allowed", async () => {
       const tree = await processMarkdown("[Test](/path/to/page?query=1#hash)", {
         defaultOrigin: "https://example.com",
