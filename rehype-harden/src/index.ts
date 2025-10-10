@@ -5,12 +5,14 @@ export function harden({
   defaultOrigin = "",
   allowedLinkPrefixes = [],
   allowedImagePrefixes = [],
+  allowDataImages = false,
   blockedImageClass = "inline-block bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-3 py-1 rounded text-sm",
   blockedLinkClass = "text-gray-500",
 }: {
   defaultOrigin?: string;
   allowedLinkPrefixes?: string[];
   allowedImagePrefixes?: string[];
+  allowDataImages?: boolean;
   blockedImageClass?: string;
   blockedLinkClass?: string;
 }) {
@@ -32,6 +34,7 @@ export function harden({
       defaultOrigin,
       allowedLinkPrefixes,
       allowedImagePrefixes,
+      allowDataImages,
       blockedImageClass,
       blockedLinkClass,
     );
@@ -75,8 +78,20 @@ function transformUrl(
   url: unknown,
   allowedPrefixes: string[],
   defaultOrigin: string,
+  allowDataImages: boolean = false,
+  isImage: boolean = false,
 ): string | null {
   if (!url) return null;
+
+  // Handle data: URLs for images if allowDataImages is enabled
+  if (typeof url === "string" && url.startsWith("data:")) {
+    // Only allow data: URLs for images when explicitly enabled
+    if (isImage && allowDataImages && url.startsWith("data:image/")) {
+      return url;
+    }
+    return null;
+  }
+
   const parsedUrl = parseUrl(url, defaultOrigin);
   if (!parsedUrl) return null;
   if (!safeProtocols.has(parsedUrl.protocol)) return null;
@@ -127,6 +142,7 @@ const createVisitor = (
   defaultOrigin: string,
   allowedLinkPrefixes: string[],
   allowedImagePrefixes: string[],
+  allowDataImages: boolean,
   blockedImageClass: string,
   blockedLinkClass: string,
 ): BuildVisitor<HastNodes> => {
@@ -144,6 +160,8 @@ const createVisitor = (
         node.properties.href,
         allowedLinkPrefixes,
         defaultOrigin,
+        false,
+        false,
       );
       if (transformedUrl === null) {
         // @ts-expect-error
@@ -182,6 +200,8 @@ const createVisitor = (
         node.properties.src,
         allowedImagePrefixes,
         defaultOrigin,
+        allowDataImages,
+        true,
       );
       if (transformedUrl === null) {
         // @ts-expect-error
