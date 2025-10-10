@@ -1,5 +1,12 @@
 # harden-react-markdown
 
+## 1.1.5
+
+### Patch Changes
+
+- Updated dependencies [7f33ff3]
+  - rehype-harden@1.1.5
+
 ## 1.1.4
 
 ### Patch Changes
