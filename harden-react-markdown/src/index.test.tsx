@@ -1191,7 +1191,7 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
           allowedLinkPrefixes={["*"]}
           urlTransform={
             (url) => url
-            /* We add the noop because we want to validate that the invariant is true even when 
+            /* We add the noop because we want to validate that the invariant is true even when
                the transform is the identity function */
           }
         >
@@ -1201,6 +1201,152 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
 
       expect(screen.queryByRole("link")).not.toBeInTheDocument();
       expect(screen.getByText("Test [blocked]")).toBeInTheDocument();
+    });
+  });
+
+  describe("Data image support", () => {
+    const base64Image =
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+
+    it("blocks data: image URLs by default", () => {
+      render(
+        <HardenedReactMarkdown>
+          {`![Test](${base64Image})`}
+        </HardenedReactMarkdown>,
+      );
+
+      expect(screen.queryByRole("img")).not.toBeInTheDocument();
+      expect(screen.getByText("[Image blocked: Test]")).toBeInTheDocument();
+    });
+
+    it("allows data: image URLs when allowDataImages is true", () => {
+      render(
+        <HardenedReactMarkdown allowDataImages={true}>
+          {`![Test](${base64Image})`}
+        </HardenedReactMarkdown>,
+      );
+
+      const img = screen.getByRole("img");
+      expect(img).toHaveAttribute("src", base64Image);
+      expect(img).toHaveAttribute("alt", "Test");
+    });
+
+    it("blocks data: image URLs when allowDataImages is false", () => {
+      render(
+        <HardenedReactMarkdown allowDataImages={false}>
+          {`![Test](${base64Image})`}
+        </HardenedReactMarkdown>,
+      );
+
+      expect(screen.queryByRole("img")).not.toBeInTheDocument();
+      expect(screen.getByText("[Image blocked: Test]")).toBeInTheDocument();
+    });
+
+    it("blocks non-image data: URLs even when allowDataImages is true", () => {
+      render(
+        <HardenedReactMarkdown allowDataImages={true}>
+          {"![Test](data:text/html,<script>alert('XSS')</script>)"}
+        </HardenedReactMarkdown>,
+      );
+
+      expect(screen.queryByRole("img")).not.toBeInTheDocument();
+      expect(screen.getByText("[Image blocked: Test]")).toBeInTheDocument();
+    });
+
+    it("blocks data: URLs in links even when allowDataImages is true", () => {
+      render(
+        <HardenedReactMarkdown allowDataImages={true}>
+          {"[Test](data:text/html,<script>alert('XSS')</script>)"}
+        </HardenedReactMarkdown>,
+      );
+
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
+      expect(screen.getByText("Test [blocked]")).toBeInTheDocument();
+    });
+
+    it("supports various data: image formats", () => {
+      const formats = [
+        "data:image/png;base64,iVBORw0KGgoAAAANS",
+        "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEA",
+        "data:image/gif;base64,R0lGODlhAQABAIAAAP",
+        "data:image/svg+xml;base64,PHN2ZyB4bWxucz0",
+        "data:image/webp;base64,UklGRiQAAABXRUJQVlA4",
+      ];
+
+      formats.forEach((format) => {
+        const { unmount } = render(
+          <HardenedReactMarkdown allowDataImages={true}>
+            {`![Test](${format})`}
+          </HardenedReactMarkdown>,
+        );
+
+        const img = screen.getByRole("img");
+        expect(img).toHaveAttribute("src", format);
+        unmount();
+      });
+    });
+
+    it("allows data: images alongside allowedImagePrefixes", () => {
+      const markdown = `
+![Data Image](${base64Image})
+![HTTP Image](https://example.com/image.png)
+      `;
+
+      render(
+        <HardenedReactMarkdown
+          defaultOrigin="https://example.com"
+          allowedImagePrefixes={["https://example.com/"]}
+          allowDataImages={true}
+        >
+          {markdown}
+        </HardenedReactMarkdown>,
+      );
+
+      const imgs = screen.getAllByRole("img");
+      expect(imgs).toHaveLength(2);
+      expect(imgs[0]).toHaveAttribute("src", base64Image);
+      expect(imgs[1]).toHaveAttribute("src", "https://example.com/image.png");
+    });
+
+    it("blocks data: images when allowedImagePrefixes is set but allowDataImages is false", () => {
+      render(
+        <HardenedReactMarkdown
+          defaultOrigin="https://example.com"
+          allowedImagePrefixes={["https://example.com/"]}
+          allowDataImages={false}
+        >
+          {`![Test](${base64Image})`}
+        </HardenedReactMarkdown>,
+      );
+
+      expect(screen.queryByRole("img")).not.toBeInTheDocument();
+      expect(screen.getByText("[Image blocked: Test]")).toBeInTheDocument();
+    });
+
+    it("works with wildcard image prefixes and allowDataImages", () => {
+      const markdown = `
+![Data Image](${base64Image})
+![HTTP Image](https://example.com/image.png)
+![Another HTTP Image](https://other-domain.com/image.jpg)
+      `;
+
+      render(
+        <HardenedReactMarkdown
+          allowedImagePrefixes={["*"]}
+          allowDataImages={true}
+        >
+          {markdown}
+        </HardenedReactMarkdown>,
+      );
+
+      const imgs = screen.getAllByRole("img");
+      expect(imgs).toHaveLength(3);
+      expect(imgs[0]).toHaveAttribute("src", base64Image);
+      expect(imgs[1]).toHaveAttribute("src", "https://example.com/image.png");
+      expect(imgs[2]).toHaveAttribute(
+        "src",
+        "https://other-domain.com/image.jpg",
+      );
     });
   });
 });

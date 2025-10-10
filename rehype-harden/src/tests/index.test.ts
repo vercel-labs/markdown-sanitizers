@@ -1049,3 +1049,123 @@ describe("Wildcard prefix support", () => {
     expect(blockedSpan).not.toBeNull();
   });
 });
+
+describe("Data image support", () => {
+  const base64Image =
+    "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
+
+  it("blocks data: image URLs by default", async () => {
+    const tree = await processMarkdown(`![Test](${base64Image})`);
+
+    const img = findElement(tree, "img");
+    expect(img).toBeNull();
+
+    const blockedSpan = findSpanWithText(tree, "[Image blocked:");
+    expect(blockedSpan).not.toBeNull();
+  });
+
+  it("allows data: image URLs when allowDataImages is true", async () => {
+    const tree = await processMarkdown(`![Test](${base64Image})`, {
+      allowDataImages: true,
+    });
+
+    const img = findElement(tree, "img");
+    expect(img).not.toBeNull();
+    expect(img!.properties.src).toBe(base64Image);
+    expect(img!.properties.alt).toBe("Test");
+  });
+
+  it("blocks data: image URLs when allowDataImages is false", async () => {
+    const tree = await processMarkdown(`![Test](${base64Image})`, {
+      allowDataImages: false,
+    });
+
+    const img = findElement(tree, "img");
+    expect(img).toBeNull();
+
+    const blockedSpan = findSpanWithText(tree, "[Image blocked:");
+    expect(blockedSpan).not.toBeNull();
+  });
+
+  it("blocks non-image data: URLs even when allowDataImages is true", async () => {
+    const tree = await processMarkdown(
+      "![Test](data:text/html,<script>alert('XSS')</script>)",
+      {
+        allowDataImages: true,
+      },
+    );
+
+    const img = findElement(tree, "img");
+    expect(img).toBeNull();
+
+    const blockedSpan = findSpanWithText(tree, "[Image blocked:");
+    expect(blockedSpan).not.toBeNull();
+  });
+
+  it("blocks data: URLs in links even when allowDataImages is true", async () => {
+    const tree = await processMarkdown(
+      "[Test](data:text/html,<script>alert('XSS')</script>)",
+      {
+        allowDataImages: true,
+      },
+    );
+
+    const link = findElement(tree, "a");
+    expect(link).toBeNull();
+
+    const blockedSpan = findSpanWithText(tree, "[blocked]");
+    expect(blockedSpan).not.toBeNull();
+  });
+
+  it("supports various data: image formats", async () => {
+    const formats = [
+      "data:image/png;base64,iVBORw0KGgoAAAANS",
+      "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEA",
+      "data:image/gif;base64,R0lGODlhAQABAIAAAP",
+      "data:image/svg+xml;base64,PHN2ZyB4bWxucz0",
+      "data:image/webp;base64,UklGRiQAAABXRUJQVlA4",
+    ];
+
+    for (const format of formats) {
+      const tree = await processMarkdown(`![Test](${format})`, {
+        allowDataImages: true,
+      });
+
+      const img = findElement(tree, "img");
+      expect(img).not.toBeNull();
+      expect(img!.properties.src).toBe(format);
+    }
+  });
+
+  it("allows data: images alongside allowedImagePrefixes", async () => {
+    const markdown = `
+![Data Image](${base64Image})
+![HTTP Image](https://example.com/image.png)
+    `;
+
+    const tree = await processMarkdown(markdown, {
+      defaultOrigin: "https://example.com",
+      allowedImagePrefixes: ["https://example.com/"],
+      allowDataImages: true,
+    });
+
+    const imgs = findElements(tree, "img");
+    expect(imgs).toHaveLength(2);
+    expect(imgs[0].properties.src).toBe(base64Image);
+    expect(imgs[1].properties.src).toBe("https://example.com/image.png");
+  });
+
+  it("blocks data: images when allowedImagePrefixes is set but allowDataImages is false", async () => {
+    const tree = await processMarkdown(`![Test](${base64Image})`, {
+      defaultOrigin: "https://example.com",
+      allowedImagePrefixes: ["https://example.com/"],
+      allowDataImages: false,
+    });
+
+    const img = findElement(tree, "img");
+    expect(img).toBeNull();
+
+    const blockedSpan = findSpanWithText(tree, "[Image blocked:");
+    expect(blockedSpan).not.toBeNull();
+  });
+});
