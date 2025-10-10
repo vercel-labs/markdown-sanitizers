@@ -1,5 +1,11 @@
 # rehype-harden
 
+## 1.1.5
+
+### Patch Changes
+
+- 7f33ff3: Allow for anchor links without specifying a default origin
+
 ## 1.1.4
 
 ### Patch Changes
