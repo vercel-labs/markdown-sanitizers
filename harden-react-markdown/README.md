@@ -97,9 +97,18 @@ A new component with enhanced security that accepts all original props plus:
 
 - Array of URL prefixes that are allowed for images
 - Images not matching these prefixes will be blocked and shown as placeholders
-- Use `"*"` to allow all URLs (disables filtering. However, `javascript:` and `data:` URLs are always disallowed)
+- Use `"*"` to allow all URLs (disables filtering. However, `javascript:` and `data:` URLs are always disallowed unless `allowDataImages` is enabled)
 - Default: `[]` (blocks all images)
 - Example: `['https://via.placeholder.com/', '/']` or `['*']`
+
+#### `allowDataImages?: boolean`
+
+- When set to `true`, allows `data:image/*` URLs (base64-encoded images) in image sources
+- This is useful for scenarios where images are embedded directly in markdown (e.g., documents converted from PDF or .docx)
+- Only `data:image/*` URLs are allowed; other `data:` URLs (like `data:text/html`) remain blocked for security
+- `data:` URLs are never allowed in links, regardless of this setting
+- Default: `false` (blocks all data: URLs)
+- Example: `true`
 
 All other props are passed through to the wrapped markdown component.
 
@@ -161,6 +170,23 @@ const HardenedMarkdown = hardenReactMarkdown(ReactMarkdown);
 ```
 
 **Note**: Using `"*"` disables URL filtering entirely. Only use this when you trust the markdown source.
+
+### Allow Base64 Images
+
+```tsx
+<HardenedMarkdown
+  defaultOrigin="https://mysite.com"
+  allowedImagePrefixes={["https://mysite.com/"]}
+  allowDataImages={true}
+>
+  {`
+  ![Base64 Image](data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==)
+  ![Regular Image](https://mysite.com/image.png)
+  `}
+</HardenedMarkdown>
+```
+
+**Note**: This is particularly useful when converting documents from formats like PDF or .docx where images are embedded as base64. Only `data:image/*` URLs are allowed; other data: URLs remain blocked for security.
 
 ### Custom Components
 
