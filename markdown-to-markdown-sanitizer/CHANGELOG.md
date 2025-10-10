@@ -1,5 +1,11 @@
 # markdown-to-markdown-sanitizer
 
+## 1.1.3
+
+### Patch Changes
+
+- cf5b5bb: Allow non-malicious links starting with hash
+
 ## 1.1.2
 
 ### Patch Changes
