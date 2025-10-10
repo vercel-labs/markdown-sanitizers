@@ -1,5 +1,15 @@
 # harden-react-markdown
 
+## 1.1.4
+
+### Patch Changes
+
+- d110a86: Add allowDataImages prop
+- cf5b5bb: Allow non-malicious links starting with hash
+- Updated dependencies [d110a86]
+- Updated dependencies [cf5b5bb]
+  - rehype-harden@1.1.4
+
 ## 1.1.3
 
 ### Patch Changes

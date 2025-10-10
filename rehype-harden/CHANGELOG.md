@@ -1,5 +1,12 @@
 # rehype-harden
 
+## 1.1.4
+
+### Patch Changes
+
+- d110a86: Add allowDataImages prop
+- cf5b5bb: Allow non-malicious links starting with hash
+
 ## 1.1.3
 
 ### Patch Changes
