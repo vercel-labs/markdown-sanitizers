@@ -90,6 +90,17 @@ export class UrlNormalizer {
   }
 
   sanitizeUrl(url: string, type: "href" | "src"): string {
+    // Allow hash-only (fragment-only) URLs for links - they navigate within the current page
+    // But block fragments that contain dangerous patterns like "javascript:"
+    if (type === "href" && url.startsWith("#")) {
+      // Check if the fragment contains dangerous protocol patterns
+      const dangerousPatterns = /javascript:|data:|vbscript:|file:/i;
+      if (!dangerousPatterns.test(url)) {
+        return url;
+      }
+      // If it contains dangerous patterns, fall through to normal validation
+    }
+
     const normalizedUrl = this.normalizeUrl(
       url,
       type === "src"

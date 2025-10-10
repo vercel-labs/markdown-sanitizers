@@ -77,6 +77,18 @@ function transformUrl(
   defaultOrigin: string,
 ): string | null {
   if (!url) return null;
+
+  // Allow hash-only (fragment-only) URLs - they navigate within the current page
+  // But block fragments that contain dangerous patterns like "javascript:"
+  if (typeof url === "string" && url.startsWith("#")) {
+    // Check if the fragment contains dangerous protocol patterns
+    const dangerousPatterns = /javascript:|data:|vbscript:|file:/i;
+    if (!dangerousPatterns.test(url)) {
+      return url;
+    }
+    // If it contains dangerous patterns, fall through to normal validation which will reject it
+  }
+
   const parsedUrl = parseUrl(url, defaultOrigin);
   if (!parsedUrl) return null;
   if (!safeProtocols.has(parsedUrl.protocol)) return null;
