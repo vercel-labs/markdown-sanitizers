@@ -83,6 +83,15 @@ function transformUrl(
 ): string | null {
   if (!url) return null;
 
+  // Allow hash-only (fragment-only) URLs - they navigate within the current page
+  if (typeof url === "string" && url.startsWith("#") && !isImage) {
+    const parsedURL = parseUrl(url, defaultOrigin);
+    if (parsedURL && parsedURL.hash === url) {
+      return url;
+    }
+    // If it's not a valid hash-only URL, fall through to normal validation
+  }
+
   // Handle data: URLs for images if allowDataImages is enabled
   if (typeof url === "string" && url.startsWith("data:")) {
     // Only allow data: URLs for images when explicitly enabled

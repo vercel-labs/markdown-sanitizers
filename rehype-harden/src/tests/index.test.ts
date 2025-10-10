@@ -171,6 +171,30 @@ describe("rehype-harden", () => {
   });
 
   describe("URL transformation", () => {
+    it("allows hash-only anchor links without requiring prefixes", async () => {
+      const tree = await processMarkdown("[Jump to section](#hero)", {
+        defaultOrigin: "https://example.com",
+        allowedLinkPrefixes: ["https://example.com/blog"],
+      });
+
+      const link = findElement(tree, "a");
+      expect(link).not.toBeNull();
+      expect(link!.properties.href).toBe("#hero");
+      expect(link!.properties.target).toBe("_blank");
+      expect(link!.properties.rel).toBe("noopener noreferrer");
+    });
+
+    it("allows hash-only anchor links even with no allowed prefixes", async () => {
+      const tree = await processMarkdown("[Jump to top](#top)", {
+        defaultOrigin: "https://example.com",
+        allowedLinkPrefixes: [],
+      });
+
+      const link = findElement(tree, "a");
+      expect(link).not.toBeNull();
+      expect(link!.properties.href).toBe("#top");
+    });
+
     it("preserves relative URLs when input is relative and allowed", async () => {
       const tree = await processMarkdown("[Test](/path/to/page?query=1#hash)", {
         defaultOrigin: "https://example.com",

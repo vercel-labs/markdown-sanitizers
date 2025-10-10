@@ -90,6 +90,15 @@ export class UrlNormalizer {
   }
 
   sanitizeUrl(url: string, type: "href" | "src"): string {
+    // Allow hash-only (fragment-only) URLs for links - they navigate within the current page
+    if (type === "href" && url.startsWith("#")) {
+      const parsedURL = tryParseUrl(url, this.options.defaultLinkOrigin || this.options.defaultOrigin);
+      if (parsedURL && parsedURL.hash === url) {
+        return url;
+      }
+      // If it's not a valid hash-only URL, fall through to normal validation
+    }
+
     const normalizedUrl = this.normalizeUrl(
       url,
       type === "src"
