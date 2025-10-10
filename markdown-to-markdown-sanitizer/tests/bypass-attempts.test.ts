@@ -224,6 +224,12 @@ describe("Markdown Sanitizer Bypass Attempts", () => {
       return false;
     }
 
+    // Allow hash-only fragments (in-page navigation)
+    // These are safe because they're just fragment identifiers, not executable URLs
+    if (url.startsWith("#")) {
+      return false;
+    }
+
     try {
       const parsedUrl = new URL(url);
 
