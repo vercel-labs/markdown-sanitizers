@@ -15,6 +15,39 @@ describe("Basic Markdown Sanitization", () => {
   };
 
   describe("Link Sanitization", () => {
+    test("allows hash-only anchor links without requiring prefixes", () => {
+      const input = "[Jump to section](#hero)";
+      const result = sanitize(input, {
+        allowedLinkPrefixes: ["https://example.com/blog"],
+      });
+      expect(result).toBe("[Jump to section](#hero)\n");
+    });
+
+    test("allows hash-only anchor links even with no allowed prefixes", () => {
+      const input = "[Jump to top](#top)";
+      const result = sanitize(input, {
+        allowedLinkPrefixes: [],
+      });
+      expect(result).toBe("[Jump to top](#top)\n");
+    });
+
+    test("safely handles hash fragments that look malicious but are just fragments", () => {
+      // When markdown is parsed, #javascript:alert('xss') is treated as a fragment identifier
+      // It gets resolved to https://example.com/#javascript:alert('xss') which is safe
+      const input = "[Click me](#javascript:alert('xss'))";
+      const result = sanitize(input);
+      // The result is safe because it's a full URL with our trusted domain
+      // Note: Single quotes are not encoded by the URL normalizer
+      expect(result).toBe("[Click me](https://example.com/#javascript:alert%28'xss'%29)\n");
+    });
+
+    test("safely handles hash fragments with data: pattern", () => {
+      // Similar to above - these are just fragment identifiers, not data: URLs
+      const input = "[Click me](#data:text/html,<script>alert('xss')</script>)";
+      const result = sanitize(input);
+      expect(result).toBe("[Click me](https://example.com/#data:text/html,%3Cscript%3Ealert%28'xss'%29%3C/script%3E)\n");
+    });
+
     test("allows trusted links", () => {
       const input = "[Click here](https://example.com/page)";
       const result = sanitize(input);
