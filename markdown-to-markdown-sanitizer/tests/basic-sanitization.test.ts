@@ -33,19 +33,21 @@ describe("Basic Markdown Sanitization", () => {
 
     test("safely handles hash fragments that look malicious but are just fragments", () => {
       // When markdown is parsed, #javascript:alert('xss') is treated as a fragment identifier
-      // It gets resolved to https://example.com/#javascript:alert('xss') which is safe
+      // Hash-only URLs are allowed because they're just in-page navigation, not executable code
       const input = "[Click me](#javascript:alert('xss'))";
       const result = sanitize(input);
-      // The result is safe because it's a full URL with our trusted domain
-      // Note: Single quotes are not encoded by the URL normalizer
-      expect(result).toBe("[Click me](https://example.com/#javascript:alert%28'xss'%29)\n");
+      // Hash fragments are preserved as-is since they're safe fragment identifiers
+      // Parentheses are markdown-escaped rather than URL-encoded
+      expect(result).toBe("[Click me](#javascript:alert\\('xss'\\))\n");
     });
 
     test("safely handles hash fragments with data: pattern", () => {
       // Similar to above - these are just fragment identifiers, not data: URLs
+      // Hash-only URLs starting with # are preserved as safe in-page navigation
       const input = "[Click me](#data:text/html,<script>alert('xss')</script>)";
       const result = sanitize(input);
-      expect(result).toBe("[Click me](https://example.com/#data:text/html,%3Cscript%3Ealert%28'xss'%29%3C/script%3E)\n");
+      // Parentheses are markdown-escaped rather than URL-encoded
+      expect(result).toBe("[Click me](#data:text/html,%3Cscript%3Ealert\\('xss'\\)%3C/script%3E)\n");
     });
 
     test("allows trusted links", () => {

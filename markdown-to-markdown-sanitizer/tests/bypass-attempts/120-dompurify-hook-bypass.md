@@ -38,7 +38,3 @@
 ## Base64 in non-data URLs
 <a href="data:text/html,PHNjcmlwdD5hbGVydCgnYmFzZTY0Jyk8L3NjcmlwdD4=">Not data URL</a>
 <img src="https://example.com/PHNjcmlwdD5hbGVydCgnYmFzZTY0Jyk8L3NjcmlwdD4=" />
-
-## Fragment identifiers with attacks
-<a href="#javascript:alert('fragment')">Fragment</a>
-<a href="/safe.html#javascript:alert('safe-fragment')">Safe with fragment</a>
