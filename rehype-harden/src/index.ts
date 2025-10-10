@@ -87,13 +87,9 @@ function transformUrl(
   if (typeof url === "string" && url.startsWith("#") && !isImage) {
     const parsedURL = parseUrl(url, defaultOrigin);
     if (parsedURL && parsedURL.hash === url) {
-      // Check if the hash contains dangerous protocol patterns
-      const dangerousPatterns = /javascript:|data:|vbscript:|file:/i;
-      if (!dangerousPatterns.test(url)) {
-        return url;
-      }
+      return url;
     }
-    // If it's not a valid hash-only URL or contains dangerous patterns, fall through to normal validation
+    // If it's not a valid hash-only URL, fall through to normal validation
   }
 
   // Handle data: URLs for images if allowDataImages is enabled
