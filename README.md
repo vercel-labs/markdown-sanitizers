@@ -17,9 +17,30 @@ and links.
 ## 2. You're giving the markdown to a third-party such as GitHub or GitLab where you don't control the rendering
 
 We created [markdown-to-markdown-sanitizer](https://github.com/vercel/harden-react-markdown/tree/main/markdown-to-markdown-sanitizer) for this
-use-case. Generally speaking, this is less secure than sanitizing the final rendered output such as the generated HTML. Hence, this package 
+use-case. Generally speaking, this is less secure than sanitizing the final rendered output such as the generated HTML. Hence, this package
 should only be used when the markdown is rendered by a third-party such as GitHub or GitLab.
 
 ## Security properties
 
 The packages in this repository have subtle security properties. Use at your own risk (see LICENSE) and perform your own security testing for specific application.
+
+### ⚠️ Important: Use `rehype-sanitize` if using `rehype-raw`
+
+If you use [`rehype-raw`](https://github.com/rehypejs/rehype-raw) or any plugin that allows **embedded raw HTML**, you **must** pair it with a sanitizer such as [`[rehype-sanitize](https://github.com/rehypejs/rehype-sanitize)`](https://github.com/rehypejs/rehype-sanitize).
+
+While `harden-react-markdown` and related packages harden URLs inside markdown nodes, raw HTML injected via `rehype-raw` bypasses this layer — meaning untrusted HTML could still introduce data-exfiltration or XSS vectors.
+
+**Recommended setup:**
+
+```ts
+import rehypeRaw from "rehype-raw";
+import rehypeSanitize from "rehype-sanitize";
+
+const plugins = [
+  rehypeRaw,
+  rehypeSanitize, // must come after rehype-raw
+];
+```
+
+✅ **Always sanitize after parsing raw HTML**
+🚫 Never assume LLM or user-generated markdown is safe by default.
