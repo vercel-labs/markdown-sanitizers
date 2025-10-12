@@ -38,7 +38,8 @@
     "react-markdown": ">=9.0.0"
   },
   "dependencies": {
-    "rehype-harden": "workspace:*"
+    "rehype-harden": "workspace:*",
+    "rehype-raw": "^7.0.0"
   },
   "devDependencies": {
     "@testing-library/jest-dom": "^6.6.4",
