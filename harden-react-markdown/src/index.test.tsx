@@ -1357,7 +1357,7 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
         <HardenedReactMarkdown
           defaultOrigin="https://example.com"
           allowedLinkPrefixes={["https://github.com/"]}
-          rehypePlugins={[require('rehype-raw')]}
+          rehypePlugins={[rehypeRaw]}
         >
           {'<a href="javascript:alert(\'XSS\')" >Click me</a>'}
         </HardenedReactMarkdown>,
@@ -1372,7 +1372,7 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
         <HardenedReactMarkdown
           defaultOrigin="https://example.com"
           allowedLinkPrefixes={["https://github.com/"]}
-          rehypePlugins={[require('rehype-raw')]}
+          rehypePlugins={[rehypeRaw]}
         >
           {'<a href="data:text/html,<script>alert(\'XSS\')</script>">Click me</a>'}
         </HardenedReactMarkdown>,
