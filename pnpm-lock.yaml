@@ -171,6 +171,10 @@ importers:
         version: 3.2.4(@types/debug@4.1.12)(@types/node@20.19.17)(@vitest/ui@3.2.4)(jsdom@25.0.1)
 
   rehype-harden:
+    dependencies:
+      unist-util-visit:
+        specifier: ^5.0.0
+        version: 5.0.0
     devDependencies:
       '@types/hast':
         specifier: ^3.0.4
@@ -190,9 +194,6 @@ importers:
       unified:
         specifier: ^11.0.5
         version: 11.0.5
-      unist-util-visit:
-        specifier: ^5.0.0
-        version: 5.0.0
       vite:
         specifier: ^7.0.6
         version: 7.1.7(@types/node@20.19.17)

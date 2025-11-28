@@ -223,6 +223,38 @@ const result = processor.processSync(markdownWithBase64Images);
 
 **Note**: This is particularly useful when converting documents from formats like PDF or .docx where images are embedded as base64. Only `data:image/*` URLs are allowed; other data: URLs remain blocked for security.
 
+### Blob URLs
+
+Blob URLs (`blob:`) are automatically allowed by default for both links and images. These are browser-generated URLs that reference in-memory objects and are commonly used for:
+- Previewing user-uploaded files before upload
+- Client-side image manipulation
+- Displaying generated content
+
+```ts
+import { harden } from "rehype-harden";
+import remarkParse from "remark-parse";
+import remarkRehype from "remark-rehype";
+import { unified } from "unified";
+
+const processor = unified()
+  .use(remarkParse)
+  .use(remarkRehype)
+  .use(harden, {
+    defaultOrigin: "https://mysite.com",
+    allowedImagePrefixes: ["https://mysite.com/"],
+  })
+  .use(/* your compiler */);
+
+const markdownWithBlobUrl = `
+![Preview](blob:https://example.com/40a5fb5a-d56d-4a33-b4e2-0acf6a8e5f64)
+`;
+
+const result = processor.processSync(markdownWithBlobUrl);
+// The blob: URL will be allowed even without being in allowedImagePrefixes
+```
+
+**Note**: Blob URLs are safe because they can only reference content already loaded in the browser's memory. They cannot be used to exfiltrate data or load external resources.
+
 ### Custom Styling for Blocked Content
 
 ```ts
@@ -269,6 +301,7 @@ const result = processor.processSync(markdownContent);
 - **Redirect Protection**: Prevents unauthorized redirects to malicious sites
 - **Tracking Prevention**: Blocks unauthorized image tracking pixels
 - **Domain Spoofing**: Validates full URLs, not just domains
+- **Safe Protocols**: Allows safe protocols including `https:`, `http:`, `mailto:`, `blob:`, and others while blocking dangerous ones
 
 ## Testing
 

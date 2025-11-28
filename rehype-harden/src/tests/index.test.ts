@@ -299,7 +299,6 @@ describe("rehype-harden", () => {
       'vbscript:msgbox("XSS")',
       "file:///etc/passwd",
       "about:blank",
-      "blob:https://example.com/uuid",
       "tel:+1234567890",
       "ftp://ftp.example.com/file",
       "../../../etc/passwd",
@@ -337,7 +336,6 @@ describe("rehype-harden", () => {
       "javascript:void(0)",
       "vbscript:execute",
       "file:///etc/passwd",
-      "blob:https://example.com/uuid",
       "../../../sensitive.jpg",
       "//evil.com/tracker.gif",
       "https://evil.com@trusted.com/image.jpg",
@@ -1213,5 +1211,92 @@ describe("Data image support", () => {
 
     const blockedSpan = findSpanWithText(tree, "[Image blocked:");
     expect(blockedSpan).not.toBeNull();
+  });
+});
+
+describe("Blob URL support", () => {
+  const blobUrl = "blob:https://example.com/40a5fb5a-d56d-4a33-b4e2-0acf6a8e5f64";
+
+  it("allows blob: URLs in images by default", async () => {
+    const tree = await processMarkdown(`![Test](${blobUrl})`);
+
+    const img = findElement(tree, "img");
+    expect(img).not.toBeNull();
+    expect(img!.properties.src).toBe(blobUrl);
+    expect(img!.properties.alt).toBe("Test");
+  });
+
+  it("allows blob: URLs in links by default", async () => {
+    const tree = await processMarkdown(`[Test](${blobUrl})`);
+
+    const link = findElement(tree, "a");
+    expect(link).not.toBeNull();
+    expect(link!.properties.href).toBe(blobUrl);
+    expect(link!.properties.target).toBe("_blank");
+    expect(link!.properties.rel).toBe("noopener noreferrer");
+  });
+
+  it("allows blob: URLs with different origins", async () => {
+    const blobUrls = [
+      "blob:https://example.com/uuid-1",
+      "blob:http://localhost:3000/uuid-2",
+      "blob:null/uuid-3", // blob URLs from sandboxed iframes
+    ];
+
+    for (const url of blobUrls) {
+      const tree = await processMarkdown(`![Test](${url})`);
+      const img = findElement(tree, "img");
+      expect(img).not.toBeNull();
+      expect(img!.properties.src).toBe(url);
+    }
+  });
+
+  it("blocks truly malformed blob: URLs", async () => {
+    // Only test "blob:" with nothing after it
+    // Note: The URL constructor is quite permissive with blob: URLs
+    const tree = await processMarkdown(`![Test](blob:)`);
+    const img = findElement(tree, "img");
+    expect(img).toBeNull();
+
+    const blockedSpan = findSpanWithText(tree, "[Image blocked:");
+    expect(blockedSpan).not.toBeNull();
+  });
+
+  it("allows blob: URLs alongside allowedImagePrefixes", async () => {
+    const markdown = `
+![Blob Image](${blobUrl})
+![HTTP Image](https://example.com/image.png)
+    `;
+
+    const tree = await processMarkdown(markdown, {
+      defaultOrigin: "https://example.com",
+      allowedImagePrefixes: ["https://example.com/"],
+    });
+
+    const imgs = findElements(tree, "img");
+    expect(imgs).toHaveLength(2);
+    expect(imgs[0].properties.src).toBe(blobUrl);
+    expect(imgs[1].properties.src).toBe("https://example.com/image.png");
+  });
+
+  it("allows blob: URLs with empty allowedPrefixes", async () => {
+    const tree = await processMarkdown(`![Test](${blobUrl})`, {
+      defaultOrigin: "https://example.com",
+      allowedImagePrefixes: [],
+    });
+
+    const img = findElement(tree, "img");
+    expect(img).not.toBeNull();
+    expect(img!.properties.src).toBe(blobUrl);
+  });
+
+  it("allows blob: URLs in links with wildcard prefix", async () => {
+    const tree = await processMarkdown(`[Test](${blobUrl})`, {
+      allowedLinkPrefixes: ["*"],
+    });
+
+    const link = findElement(tree, "a");
+    expect(link).not.toBeNull();
+    expect(link!.properties.href).toBe(blobUrl);
   });
 });

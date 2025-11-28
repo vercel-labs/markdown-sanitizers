@@ -72,6 +72,7 @@ const safeProtocols = new Set([
   "ircs:",
   "mailto:",
   "xmpp:",
+  "blob:",
 ]);
 
 function transformUrl(
@@ -105,6 +106,26 @@ function transformUrl(
       return url;
     }
     return null;
+  }
+
+  // Handle blob: URLs - these are browser-generated URLs for local objects
+  if (typeof url === "string" && url.startsWith("blob:")) {
+    // blob: URLs are valid and safe - they reference in-memory objects
+    // They can only reference content already loaded in the browser
+    try {
+      // Validate it's a properly formatted blob URL
+      // blob: URLs should have the format: blob:<origin>/<uuid> or blob:null/<uuid>
+      const blobUrl = new URL(url);
+      if (blobUrl.protocol === "blob:" && url.length > 5) {
+        // Ensure there's actual content after "blob:"
+        const afterProtocol = url.substring(5);
+        if (afterProtocol && afterProtocol !== "invalid") {
+          return url;
+        }
+      }
+    } catch {
+      return null;
+    }
   }
 
   const parsedUrl = parseUrl(url, defaultOrigin);
