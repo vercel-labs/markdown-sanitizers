@@ -4,6 +4,7 @@ import React from "react";
 import ReactMarkdown from "react-markdown";
 import type { Options } from "react-markdown";
 import hardenReactMarkdown from "./index";
+import rehypeRaw from "rehype-raw";
 
 // Create the hardened version using our function
 const HardenedReactMarkdown = hardenReactMarkdown(ReactMarkdown);
@@ -1349,4 +1350,51 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
       );
     });
   });
+
+  describe("Should block bad links in raw html as well when rehypeRaw is used", () => {
+    it("blocks javascript: URLs in raw HTML links", () => {
+      render(
+        <HardenedReactMarkdown
+          defaultOrigin="https://example.com"
+          allowedLinkPrefixes={["https://github.com/"]}
+          rehypePlugins={[rehypeRaw]}
+        >
+          {'<a href="javascript:alert(\'XSS\')" >Click me</a>'}
+        </HardenedReactMarkdown>,
+      );
+
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
+      expect(screen.getByText("Click me [blocked]")).toBeInTheDocument();
+    });
+
+    it("blocks data: URLs in raw HTML links", () => {
+      render(
+        <HardenedReactMarkdown
+          defaultOrigin="https://example.com"
+          allowedLinkPrefixes={["https://github.com/"]}
+          rehypePlugins={[rehypeRaw]}
+        >
+          {'<a href="data:text/html,<script>alert(\'XSS\')</script>">Click me</a>'}
+        </HardenedReactMarkdown>,
+      );
+
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
+      expect(screen.getByText("Click me [blocked]")).toBeInTheDocument();
+    });
+
+    it("blocks malicious URLs in raw HTML images", () => {
+      render(
+        <HardenedReactMarkdown
+          defaultOrigin="https://example.com"
+          allowedImagePrefixes={["https://trusted.com/"]}
+          rehypePlugins={[rehypeRaw]}
+        >
+          {'<img src="javascript:void(0)" alt="Test" />'}
+        </HardenedReactMarkdown>,
+      );
+
+      expect(screen.queryByRole("img")).not.toBeInTheDocument();
+      expect(screen.getByText("[Image blocked: Test]")).toBeInTheDocument();
+    });
+  })
 });

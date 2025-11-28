@@ -39,11 +39,11 @@ export default function hardenReactMarkdown(
         {...props}
         urlTransform={customUrlTransform}
         rehypePlugins={[
+          ...(rehypePlugins ?? []),
           [
             harden,
             { defaultOrigin, allowedLinkPrefixes, allowedImagePrefixes, allowDataImages },
           ],
-          ...(rehypePlugins ?? []),
         ]}
       />
     );
