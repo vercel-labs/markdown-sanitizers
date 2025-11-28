@@ -6,6 +6,7 @@ export function harden({
   allowedLinkPrefixes = [],
   allowedImagePrefixes = [],
   allowDataImages = false,
+  allowedProtocols = [],
   blockedImageClass = "inline-block bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-3 py-1 rounded text-sm",
   blockedLinkClass = "text-gray-500",
 }: {
@@ -13,6 +14,7 @@ export function harden({
   allowedLinkPrefixes?: string[];
   allowedImagePrefixes?: string[];
   allowDataImages?: boolean;
+  allowedProtocols?: string[];
   blockedImageClass?: string;
   blockedLinkClass?: string;
 }) {
@@ -35,6 +37,7 @@ export function harden({
       allowedLinkPrefixes,
       allowedImagePrefixes,
       allowDataImages,
+      allowedProtocols,
       blockedImageClass,
       blockedLinkClass,
     );
@@ -75,12 +78,21 @@ const safeProtocols = new Set([
   "blob:",
 ]);
 
+// Protocols that should NEVER be allowed for security reasons
+const blockedProtocols = new Set([
+  "javascript:",
+  "data:",
+  "file:",
+  "vbscript:",
+]);
+
 function transformUrl(
   url: unknown,
   allowedPrefixes: string[],
   defaultOrigin: string,
   allowDataImages: boolean = false,
   isImage: boolean = false,
+  allowedProtocols: string[] = [],
 ): string | null {
   if (!url) return null;
 
@@ -119,20 +131,38 @@ function transformUrl(
       if (blobUrl.protocol === "blob:" && url.length > 5) {
         // Ensure there's actual content after "blob:"
         const afterProtocol = url.substring(5);
-        if (afterProtocol && afterProtocol !== "invalid") {
+        if (afterProtocol && afterProtocol.length > 0 && afterProtocol !== "invalid") {
           return url;
         }
       }
     } catch {
       return null;
     }
+    // If we get here, the blob URL is malformed
+    return null;
   }
 
   const parsedUrl = parseUrl(url, defaultOrigin);
   if (!parsedUrl) return null;
-  if (!safeProtocols.has(parsedUrl.protocol)) return null;
 
-  if (parsedUrl.protocol === "mailto:") return parsedUrl.href;
+  // Block dangerous protocols - these should NEVER be allowed
+  // Exception: data: is allowed for images if allowDataImages is true (handled above)
+  if (blockedProtocols.has(parsedUrl.protocol)) {
+    return null;
+  }
+
+  // Check if protocol is allowed
+  const isProtocolAllowed =
+    safeProtocols.has(parsedUrl.protocol) ||
+    allowedProtocols.includes(parsedUrl.protocol) ||
+    allowedProtocols.includes("*");
+
+  if (!isProtocolAllowed) return null;
+
+  // mailto: and other custom protocols can just return as-is
+  if (parsedUrl.protocol === "mailto:" || !parsedUrl.protocol.match(/^https?:$/)) {
+    return parsedUrl.href;
+  }
 
   // If the input is path relative, we output a path relative URL as well,
   // however, we always run the same checks on an absolute URL and we
@@ -179,6 +209,7 @@ const createVisitor = (
   allowedLinkPrefixes: string[],
   allowedImagePrefixes: string[],
   allowDataImages: boolean,
+  allowedProtocols: string[],
   blockedImageClass: string,
   blockedLinkClass: string,
 ): BuildVisitor<HastNodes> => {
@@ -198,6 +229,7 @@ const createVisitor = (
         defaultOrigin,
         false,
         false,
+        allowedProtocols,
       );
       if (transformedUrl === null) {
         // @ts-expect-error
@@ -238,6 +270,7 @@ const createVisitor = (
         defaultOrigin,
         allowDataImages,
         true,
+        allowedProtocols,
       );
       if (transformedUrl === null) {
         // @ts-expect-error

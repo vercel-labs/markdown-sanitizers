@@ -10,6 +10,7 @@ interface HardenReactMarkdownOptions {
   allowedLinkPrefixes?: string[];
   allowedImagePrefixes?: string[];
   allowDataImages?: boolean;
+  allowedProtocols?: string[];
 }
 
 export default function hardenReactMarkdown(
@@ -20,6 +21,7 @@ export default function hardenReactMarkdown(
     allowedLinkPrefixes,
     allowedImagePrefixes,
     allowDataImages,
+    allowedProtocols,
     rehypePlugins,
     urlTransform,
     ...props
@@ -42,7 +44,7 @@ export default function hardenReactMarkdown(
           ...(rehypePlugins ?? []),
           [
             harden,
-            { defaultOrigin, allowedLinkPrefixes, allowedImagePrefixes, allowDataImages },
+            { defaultOrigin, allowedLinkPrefixes, allowedImagePrefixes, allowDataImages, allowedProtocols },
           ],
         ]}
       />

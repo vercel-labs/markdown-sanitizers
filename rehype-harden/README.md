@@ -85,6 +85,15 @@ const processor = unified()
 - Default: `false` (blocks all data: URLs)
 - Example: `true`
 
+#### `allowedProtocols?: string[]`
+
+- Array of custom URL protocols that are allowed in links
+- Useful for deep links to applications (e.g., `tel:`, `mailto:`, `postman:`, `vscode:`, `slack:`)
+- Use `"*"` to allow all protocols that can be parsed as valid URLs
+- Dangerous protocols (`javascript:`, `data:`, `file:`, `vbscript:`) are **always blocked** regardless of this setting
+- Default: `[]` (only allows built-in safe protocols: `https:`, `http:`, `mailto:`, `irc:`, `ircs:`, `xmpp:`, `blob:`)
+- Example: `['tel:', 'postman:', 'vscode:']` or `['*']`
+
 #### `blockedImageClass?: string`
 
 - When an image is blocked, by default it is rendered as a span with the text `[Image blocked: {alt text (if provided)}]`. `blockedImageClass` will be added as a class to this span to allow styling.
@@ -255,6 +264,57 @@ const result = processor.processSync(markdownWithBlobUrl);
 
 **Note**: Blob URLs are safe because they can only reference content already loaded in the browser's memory. They cannot be used to exfiltrate data or load external resources.
 
+### Custom Protocol Support
+
+Enable custom protocols for deep linking to applications and services:
+
+```ts
+import { harden } from "rehype-harden";
+import remarkParse from "remark-parse";
+import remarkRehype from "remark-rehype";
+import { unified } from "unified";
+
+const processor = unified()
+  .use(remarkParse)
+  .use(remarkRehype)
+  .use(harden, {
+    allowedProtocols: ['tel:', 'mailto:', 'postman:', 'vscode:', 'slack:'],
+  })
+  .use(/* your compiler */);
+
+const markdownWithCustomProtocols = `
+[Call us](tel:+1234567890)
+[Email support](mailto:support@example.com)
+[Open in Postman](postman://open/collection)
+[View in VS Code](vscode://file/path/to/file.ts)
+[Join Slack](slack://channel?id=C123456)
+`;
+
+const result = processor.processSync(markdownWithCustomProtocols);
+// All these custom protocol links will be allowed
+```
+
+**Common use cases:**
+- **`tel:`** - Phone number links that open the dialer on mobile devices
+- **`mailto:`** - Email links (allowed by default, but shown here for completeness)
+- **`sms:`** - SMS/text message links
+- **`postman:`**, **`vscode:`**, **`slack:`** - Deep links to desktop applications
+- **Custom app protocols** - Links to your own Electron or native applications
+
+You can also use the wildcard to allow any custom protocol:
+
+```ts
+const processor = unified()
+  .use(remarkParse)
+  .use(remarkRehype)
+  .use(harden, {
+    allowedProtocols: ['*'], // Allow all protocols
+  })
+  .use(/* your compiler */);
+```
+
+**Security Note**: Even with `allowedProtocols: ['*']`, dangerous protocols like `javascript:`, `data:`, `file:`, and `vbscript:` are **always blocked** for security. Custom protocols are safe because they trigger OS-level protocol handlers and don't execute in the browser context.
+
 ### Custom Styling for Blocked Content
 
 ```ts
@@ -297,11 +357,12 @@ const result = processor.processSync(markdownContent);
 
 ### Attack Prevention
 
-- **XSS Prevention**: Blocks `javascript:`, `data:`, `vbscript:` and other dangerous protocols
+- **XSS Prevention**: Blocks `javascript:`, `data:`, `vbscript:`, `file:` and other dangerous protocols (always, regardless of configuration)
 - **Redirect Protection**: Prevents unauthorized redirects to malicious sites
 - **Tracking Prevention**: Blocks unauthorized image tracking pixels
 - **Domain Spoofing**: Validates full URLs, not just domains
 - **Safe Protocols**: Allows safe protocols including `https:`, `http:`, `mailto:`, `blob:`, and others while blocking dangerous ones
+- **Custom Protocols**: Optional support for custom protocols (e.g., `tel:`, `postman:`, `vscode:`) with explicit opt-in via `allowedProtocols`
 
 ## Testing
 

@@ -1214,6 +1214,256 @@ describe("Data image support", () => {
   });
 });
 
+describe("Custom protocol support", () => {
+  describe("allowedProtocols parameter", () => {
+    it("blocks custom protocols by default", async () => {
+      const tree = await processMarkdown("[Postman](postman://open)", {
+        allowedLinkPrefixes: ["*"],
+      });
+
+      const link = findElement(tree, "a");
+      expect(link).toBeNull();
+
+      const blockedSpan = findSpanWithText(tree, "[blocked]");
+      expect(blockedSpan).not.toBeNull();
+    });
+
+    it("allows tel: protocol when specified in allowedProtocols", async () => {
+      const tree = await processMarkdown("[Call us](tel:+1234567890)", {
+        allowedProtocols: ["tel:"],
+      });
+
+      const link = findElement(tree, "a");
+      expect(link).not.toBeNull();
+      expect(link!.properties.href).toBe("tel:+1234567890");
+      expect(link!.properties.target).toBe("_blank");
+      expect(link!.properties.rel).toBe("noopener noreferrer");
+    });
+
+    it("allows postman: protocol when specified in allowedProtocols", async () => {
+      const tree = await processMarkdown("[Open Postman](postman://)", {
+        allowedProtocols: ["postman:"],
+      });
+
+      const link = findElement(tree, "a");
+      expect(link).not.toBeNull();
+      expect(link!.properties.href).toBe("postman://");
+    });
+
+    it("allows vscode: protocol when specified in allowedProtocols", async () => {
+      const tree = await processMarkdown(
+        "[Open in VS Code](vscode://file/path/to/file.ts)",
+        {
+          allowedProtocols: ["vscode:"],
+        },
+      );
+
+      const link = findElement(tree, "a");
+      expect(link).not.toBeNull();
+      expect(link!.properties.href).toBe("vscode://file/path/to/file.ts");
+    });
+
+    it("allows slack: protocol when specified in allowedProtocols", async () => {
+      const tree = await processMarkdown("[Open Slack](slack://channel?id=123)", {
+        allowedProtocols: ["slack:"],
+      });
+
+      const link = findElement(tree, "a");
+      expect(link).not.toBeNull();
+      expect(link!.properties.href).toBe("slack://channel?id=123");
+    });
+
+    it("allows multiple custom protocols", async () => {
+      const markdown = `
+[Call](tel:+1234567890)
+[Postman](postman://open)
+[VS Code](vscode://file/test.ts)
+[Slack](slack://channel)
+      `;
+
+      const tree = await processMarkdown(markdown, {
+        allowedProtocols: ["tel:", "postman:", "vscode:", "slack:"],
+      });
+
+      const links = findElements(tree, "a");
+      expect(links).toHaveLength(4);
+
+      const hrefs = links.map((link) => link.properties.href);
+      expect(hrefs).toContain("tel:+1234567890");
+      expect(hrefs).toContain("postman://open");
+      expect(hrefs).toContain("vscode://file/test.ts");
+      expect(hrefs).toContain("slack://channel");
+    });
+
+    it("blocks protocols not in allowedProtocols list", async () => {
+      const markdown = `
+[Allowed](tel:+1234567890)
+[Blocked](postman://open)
+      `;
+
+      const tree = await processMarkdown(markdown, {
+        allowedProtocols: ["tel:"],
+      });
+
+      const links = findElements(tree, "a");
+      expect(links).toHaveLength(1);
+      expect(getTextContent(links[0])).toBe("Allowed");
+
+      const blockedSpan = findSpanWithText(tree, "[blocked]");
+      expect(blockedSpan).not.toBeNull();
+    });
+
+    it("allows all protocols with wildcard '*'", async () => {
+      const markdown = `
+[Tel](tel:+1234567890)
+[Postman](postman://open)
+[VS Code](vscode://file)
+[Custom](customprotocol://test)
+      `;
+
+      const tree = await processMarkdown(markdown, {
+        allowedProtocols: ["*"],
+      });
+
+      const links = findElements(tree, "a");
+      expect(links).toHaveLength(4);
+
+      const hrefs = links.map((link) => link.properties.href);
+      expect(hrefs).toContain("tel:+1234567890");
+      expect(hrefs).toContain("postman://open");
+      expect(hrefs).toContain("vscode://file");
+      expect(hrefs).toContain("customprotocol://test");
+    });
+
+    it("still blocks javascript: even with wildcard allowedProtocols", async () => {
+      const tree = await processMarkdown("[XSS](javascript:alert('XSS'))", {
+        allowedProtocols: ["*"],
+      });
+
+      // javascript: URLs can't be parsed by URL constructor, so they should be blocked
+      const link = findElement(tree, "a");
+      expect(link).toBeNull();
+
+      const blockedSpan = findSpanWithText(tree, "[blocked]");
+      expect(blockedSpan).not.toBeNull();
+    });
+
+    it("works with allowedLinkPrefixes for http/https", async () => {
+      const markdown = `
+[GitHub](https://github.com/repo)
+[Call](tel:+1234567890)
+[Evil](https://evil.com/malware)
+      `;
+
+      const tree = await processMarkdown(markdown, {
+        defaultOrigin: "https://example.com",
+        allowedLinkPrefixes: ["https://github.com/"],
+        allowedProtocols: ["tel:"],
+      });
+
+      const links = findElements(tree, "a");
+      expect(links).toHaveLength(2);
+
+      const hrefs = links.map((link) => link.properties.href);
+      expect(hrefs).toContain("https://github.com/repo");
+      expect(hrefs).toContain("tel:+1234567890");
+
+      const blockedSpan = findSpanWithText(tree, "[blocked]");
+      expect(blockedSpan).not.toBeNull();
+    });
+
+    it("works with wildcard allowedLinkPrefixes and custom protocols", async () => {
+      const markdown = `
+[Any HTTP](https://example.com)
+[Tel](tel:+1234567890)
+[Postman](postman://open)
+      `;
+
+      const tree = await processMarkdown(markdown, {
+        allowedLinkPrefixes: ["*"],
+        allowedProtocols: ["tel:", "postman:"],
+      });
+
+      const links = findElements(tree, "a");
+      expect(links).toHaveLength(3);
+
+      const hrefs = links.map((link) => link.properties.href);
+      expect(hrefs).toContain("https://example.com/");
+      expect(hrefs).toContain("tel:+1234567890");
+      expect(hrefs).toContain("postman://open");
+    });
+
+    it("handles custom protocols with complex paths and query params", async () => {
+      const tree = await processMarkdown(
+        "[Complex](customapp://path/to/resource?param=value&other=123#section)",
+        {
+          allowedProtocols: ["customapp:"],
+        },
+      );
+
+      const link = findElement(tree, "a");
+      expect(link).not.toBeNull();
+      expect(link!.properties.href).toBe(
+        "customapp://path/to/resource?param=value&other=123#section",
+      );
+    });
+
+    it("preserves default safe protocols without allowedProtocols", async () => {
+      const markdown = `
+[HTTPS](https://example.com)
+[HTTP](http://example.com)
+[Mailto](mailto:test@example.com)
+[IRC](irc://chat.freenode.net/channel)
+[XMPP](xmpp:user@example.com)
+      `;
+
+      const tree = await processMarkdown(markdown, {
+        allowedLinkPrefixes: ["*"],
+      });
+
+      const links = findElements(tree, "a");
+      expect(links).toHaveLength(5);
+    });
+  });
+
+  describe("Security considerations", () => {
+    it("tel: URLs are safe for user interaction", async () => {
+      const tree = await processMarkdown("[Call](tel:+1-555-0123)", {
+        allowedProtocols: ["tel:"],
+      });
+
+      const link = findElement(tree, "a");
+      expect(link).not.toBeNull();
+      expect(link!.properties.href).toBe("tel:+1-555-0123");
+    });
+
+    it("blocks file: protocol even if specified", async () => {
+      const tree = await processMarkdown("[File](file:///etc/passwd)", {
+        allowedProtocols: ["file:"],
+      });
+
+      // file: URLs will fail to parse in browser context, so should be blocked
+      const link = findElement(tree, "a");
+      expect(link).toBeNull();
+    });
+
+    it("requires explicit opt-in for each custom protocol", async () => {
+      const markdown = `
+[Allowed](tel:+123)
+[Blocked](sms:+456)
+      `;
+
+      const tree = await processMarkdown(markdown, {
+        allowedProtocols: ["tel:"],
+      });
+
+      const links = findElements(tree, "a");
+      expect(links).toHaveLength(1);
+      expect(getTextContent(links[0])).toBe("Allowed");
+    });
+  });
+});
+
 describe("Blob URL support", () => {
   const blobUrl = "blob:https://example.com/40a5fb5a-d56d-4a33-b4e2-0acf6a8e5f64";
 
