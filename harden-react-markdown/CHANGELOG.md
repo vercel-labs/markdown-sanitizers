@@ -1,5 +1,20 @@
 # harden-react-markdown
 
+## 1.1.6
+
+### Patch Changes
+
+- 10e0fba: Declare rehype-harden as type: module
+- f3cecdc: unist-util-visit declared as a dependency in rehype-harden
+- ce4e3a7: Add support for blob prefix urls
+- 4f54409: Add support for allowedProtocols
+- e00c8c6: Ensure `harden` plugin comes at the end so that additional nodes coming from plugins like rehype-raw are also sanitized.
+- Updated dependencies [10e0fba]
+- Updated dependencies [f3cecdc]
+- Updated dependencies [ce4e3a7]
+- Updated dependencies [4f54409]
+  - rehype-harden@1.1.6
+
 ## 1.1.5
 
 ### Patch Changes

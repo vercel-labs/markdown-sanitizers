@@ -1,5 +1,14 @@
 # rehype-harden
 
+## 1.1.6
+
+### Patch Changes
+
+- 10e0fba: Declare rehype-harden as type: module
+- f3cecdc: unist-util-visit declared as a dependency in rehype-harden
+- ce4e3a7: Add support for blob prefix urls
+- 4f54409: Add support for allowedProtocols
+
 ## 1.1.5
 
 ### Patch Changes
