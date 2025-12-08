@@ -979,6 +979,42 @@ describe("Wildcard prefix support", () => {
     expect(img!.properties.src).toBe("/images/logo.png");
   });
 
+  it("handles relative URLs with wildcard prefix and no defaultOrigin", async () => {
+    const tree1 = await processMarkdown("[Relative Link](/internal-page)", {
+      allowedLinkPrefixes: ["*"],
+    });
+
+    const link = findElement(tree1, "a");
+    expect(link).not.toBeNull();
+    expect(link!.properties.href).toBe("/internal-page");
+
+    const tree2 = await processMarkdown("![Relative Image](/images/logo.png)", {
+      allowedImagePrefixes: ["*"],
+    });
+
+    const img = findElement(tree2, "img");
+    expect(img).not.toBeNull();
+    expect(img!.properties.src).toBe("/images/logo.png");
+
+    // Test with ./ relative paths - URL API normalizes ./page to /page
+    const tree3 = await processMarkdown("[Relative Link](./page)", {
+      allowedLinkPrefixes: ["*"],
+    });
+
+    const link3 = findElement(tree3, "a");
+    expect(link3).not.toBeNull();
+    expect(link3!.properties.href).toBe("/page");
+
+    // Test with ../ relative paths - URL API normalizes ../parent to /parent
+    const tree4 = await processMarkdown("[Parent Link](../parent)", {
+      allowedLinkPrefixes: ["*"],
+    });
+
+    const link4 = findElement(tree4, "a");
+    expect(link4).not.toBeNull();
+    expect(link4!.properties.href).toBe("/parent");
+  });
+
   it("wildcard works alongside other prefixes", async () => {
     const tree = await processMarkdown(
       "[Any Link](https://random-site.com/path)",
