@@ -979,6 +979,169 @@ describe("Wildcard prefix support", () => {
     expect(img!.properties.src).toBe("/images/logo.png");
   });
 
+  it("handles relative URLs with wildcard prefix and no defaultOrigin", async () => {
+    const tree1 = await processMarkdown("[Relative Link](/internal-page)", {
+      allowedLinkPrefixes: ["*"],
+    });
+
+    const link = findElement(tree1, "a");
+    expect(link).not.toBeNull();
+    expect(link!.properties.href).toBe("/internal-page");
+
+    const tree2 = await processMarkdown("![Relative Image](/images/logo.png)", {
+      allowedImagePrefixes: ["*"],
+    });
+
+    const img = findElement(tree2, "img");
+    expect(img).not.toBeNull();
+    expect(img!.properties.src).toBe("/images/logo.png");
+
+    // Test with ./ relative paths - URL API normalizes ./page to /page
+    const tree3 = await processMarkdown("[Relative Link](./page)", {
+      allowedLinkPrefixes: ["*"],
+    });
+
+    const link3 = findElement(tree3, "a");
+    expect(link3).not.toBeNull();
+    expect(link3!.properties.href).toBe("/page");
+
+    // Test with ../ relative paths - URL API normalizes ../parent to /parent
+    const tree4 = await processMarkdown("[Parent Link](../parent)", {
+      allowedLinkPrefixes: ["*"],
+    });
+
+    const link4 = findElement(tree4, "a");
+    expect(link4).not.toBeNull();
+    expect(link4!.properties.href).toBe("/parent");
+  });
+
+  it("wildcard with no defaultOrigin still blocks dangerous protocols", async () => {
+    // Test javascript: protocol is blocked
+    const tree1 = await processMarkdown("[XSS](javascript:alert('XSS'))", {
+      allowedLinkPrefixes: ["*"],
+    });
+
+    const blocked1 = findSpanWithText(tree1, "[blocked]");
+    expect(blocked1).not.toBeNull();
+
+    // Test data: protocol is blocked for links
+    const tree2 = await processMarkdown(
+      "[Data](data:text/html,<script>alert('XSS')</script>)",
+      {
+        allowedLinkPrefixes: ["*"],
+      },
+    );
+
+    const blocked2 = findSpanWithText(tree2, "[blocked]");
+    expect(blocked2).not.toBeNull();
+
+    // Test vbscript: protocol is blocked
+    const tree3 = await processMarkdown("[VBS](vbscript:msgbox('XSS'))", {
+      allowedLinkPrefixes: ["*"],
+    });
+
+    const blocked3 = findSpanWithText(tree3, "[blocked]");
+    expect(blocked3).not.toBeNull();
+
+    // Test file: protocol is blocked
+    const tree4 = await processMarkdown("[File](file:///etc/passwd)", {
+      allowedLinkPrefixes: ["*"],
+    });
+
+    const blocked4 = findSpanWithText(tree4, "[blocked]");
+    expect(blocked4).not.toBeNull();
+
+    // Test data:image is blocked for images without allowDataImages
+    const tree5 = await processMarkdown(
+      "![Image](data:image/png;base64,iVBORw0KGg)",
+      {
+        allowedImagePrefixes: ["*"],
+        allowDataImages: false,
+      },
+    );
+
+    const blockedImg = findSpanWithText(tree5, "[Image blocked");
+    expect(blockedImg).not.toBeNull();
+  });
+
+  it("wildcard with no defaultOrigin blocks invalid/unparseable URLs", async () => {
+    // Test empty URL - markdown parsers typically convert () to href=""
+    const tree1 = await processMarkdown("[Empty]()", {
+      allowedLinkPrefixes: ["*"],
+    });
+
+    const link1 = findElement(tree1, "a");
+    // Empty href should either be blocked or converted to #
+    if (link1) {
+      expect(link1.properties.href).toBe("#");
+    } else {
+      const blocked1 = findSpanWithText(tree1, "[blocked]");
+      expect(blocked1).not.toBeNull();
+    }
+
+    // Test malformed protocol-like string
+    const tree2 = await processMarkdown("[Malformed](ht!tp://invalid)", {
+      allowedLinkPrefixes: ["*"],
+    });
+
+    // This should either be blocked or the markdown parser might treat it as text
+    const link2 = findElement(tree2, "a");
+    if (link2) {
+      // If parsed as a link, it should be blocked or normalized
+      const blocked2 = findSpanWithText(tree2, "[blocked]");
+      expect(blocked2).not.toBeNull();
+    }
+  });
+
+  it("wildcard with no defaultOrigin blocks disallowed protocols even with allowedProtocols", async () => {
+    // javascript: should be blocked even with allowedProtocols: ["*"]
+    const tree1 = await processMarkdown("[JS](javascript:alert(1))", {
+      allowedLinkPrefixes: ["*"],
+      allowedProtocols: ["*"],
+    });
+
+    const blocked1 = findSpanWithText(tree1, "[blocked]");
+    expect(blocked1).not.toBeNull();
+
+    // data: should be blocked for links even with allowedProtocols: ["*"]
+    const tree2 = await processMarkdown("[Data](data:text/html,test)", {
+      allowedLinkPrefixes: ["*"],
+      allowedProtocols: ["*"],
+    });
+
+    const blocked2 = findSpanWithText(tree2, "[blocked]");
+    expect(blocked2).not.toBeNull();
+
+    // file: should be blocked even with allowedProtocols: ["*"]
+    const tree3 = await processMarkdown("[File](file:///etc/passwd)", {
+      allowedLinkPrefixes: ["*"],
+      allowedProtocols: ["*"],
+    });
+
+    const blocked3 = findSpanWithText(tree3, "[blocked]");
+    expect(blocked3).not.toBeNull();
+  });
+
+  it("relative URLs are blocked when wildcard is not used and defaultOrigin is different", async () => {
+    // With specific prefixes and a defaultOrigin that doesn't match, relative URLs should be blocked
+    const tree1 = await processMarkdown("[Relative](/path)", {
+      defaultOrigin: "https://mysite.com",
+      allowedLinkPrefixes: ["https://example.com/"],
+    });
+
+    const blocked1 = findSpanWithText(tree1, "[blocked]");
+    expect(blocked1).not.toBeNull();
+
+    // Images should also be blocked
+    const tree2 = await processMarkdown("![Image](/image.png)", {
+      defaultOrigin: "https://mysite.com",
+      allowedImagePrefixes: ["https://example.com/"],
+    });
+
+    const blockedImg = findSpanWithText(tree2, "[Image blocked");
+    expect(blockedImg).not.toBeNull();
+  });
+
   it("wildcard works alongside other prefixes", async () => {
     const tree = await processMarkdown(
       "[Any Link](https://random-site.com/path)",

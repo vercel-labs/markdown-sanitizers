@@ -57,7 +57,8 @@ const processor = unified()
 #### `defaultOrigin?: string`
 
 - The origin to resolve relative URLs against
-- Required when `allowedLinkPrefixes` or `allowedImagePrefixes` are provided
+- Required when `allowedLinkPrefixes` or `allowedImagePrefixes` are provided (except when using wildcard `["*"]`)
+- When using wildcard `["*"]` without `defaultOrigin`, relative URLs (e.g., `/path`, `./page`) are allowed and preserved as-is
 - Example: `"https://mysite.com"`
 
 #### `allowedLinkPrefixes?: string[]`
@@ -197,12 +198,14 @@ const processor = unified()
 const markdownWithExternalUrls = `
 [Any Link](https://anywhere.com/link)
 ![Any Image](https://untrusted-site.com/image.jpg)
+[Relative Link](/internal-page)
 `;
 
 const result = processor.processSync(markdownWithExternalUrls);
+// All URLs are allowed, including relative URLs like /internal-page
 ```
 
-**Note**: Using `"*"` disables URL filtering entirely. Only use this when you trust the markdown source.
+**Note**: Using `"*"` disables URL filtering entirely. Only use this when you trust the markdown source. When using wildcard without `defaultOrigin`, relative URLs are preserved as-is in the output.
 
 ### Allow Base64 Images
 
