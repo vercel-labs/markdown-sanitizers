@@ -3,7 +3,9 @@
 import { ComponentType, ComponentProps } from "react";
 import type { Options } from "react-markdown";
 import { defaultUrlTransform } from "react-markdown";
-import { harden } from "rehype-harden";
+import { harden, BlockedLinkBehavior, BlockedImageBehavior } from "rehype-harden";
+
+export type { BlockedLinkBehavior, BlockedImageBehavior };
 
 interface HardenReactMarkdownOptions {
   defaultOrigin?: string;
@@ -11,6 +13,8 @@ interface HardenReactMarkdownOptions {
   allowedImagePrefixes?: string[];
   allowDataImages?: boolean;
   allowedProtocols?: string[];
+  blockedLinkBehavior?: BlockedLinkBehavior;
+  blockedImageBehavior?: BlockedImageBehavior;
 }
 
 export default function hardenReactMarkdown(
@@ -22,6 +26,8 @@ export default function hardenReactMarkdown(
     allowedImagePrefixes,
     allowDataImages,
     allowedProtocols,
+    blockedLinkBehavior,
+    blockedImageBehavior,
     rehypePlugins,
     urlTransform,
     ...props
@@ -44,7 +50,7 @@ export default function hardenReactMarkdown(
           ...(rehypePlugins ?? []),
           [
             harden,
-            { defaultOrigin, allowedLinkPrefixes, allowedImagePrefixes, allowDataImages, allowedProtocols },
+            { defaultOrigin, allowedLinkPrefixes, allowedImagePrefixes, allowDataImages, allowedProtocols, blockedLinkBehavior, blockedImageBehavior },
           ],
         ]}
       />

@@ -1,5 +1,14 @@
-import type { Nodes as HastNodes, Root as HastRoot } from "hast";
+import type { Element, Nodes as HastNodes, Root as HastRoot } from "hast";
 import { CONTINUE, SKIP, visit, type BuildVisitor } from "unist-util-visit";
+
+export const BlockPolicy = {
+  indicator: "indicator",
+  textOnly: "text-only",
+  remove: "remove",
+} as const;
+
+export type LinkBlockPolicy = (typeof BlockPolicy)[keyof typeof BlockPolicy];
+export type ImageBlockPolicy = (typeof BlockPolicy)[keyof typeof BlockPolicy];
 
 export function harden({
   defaultOrigin = "",
@@ -9,6 +18,8 @@ export function harden({
   allowedProtocols = [],
   blockedImageClass = "inline-block bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-400 px-3 py-1 rounded text-sm",
   blockedLinkClass = "text-gray-500",
+  linkBlockPolicy = BlockPolicy.indicator,
+  imageBlockPolicy = BlockPolicy.indicator,
 }: {
   defaultOrigin?: string;
   allowedLinkPrefixes?: string[];
@@ -17,6 +28,8 @@ export function harden({
   allowedProtocols?: string[];
   blockedImageClass?: string;
   blockedLinkClass?: string;
+  linkBlockPolicy?: LinkBlockPolicy;
+  imageBlockPolicy?: ImageBlockPolicy;
 }) {
   // Only require defaultOrigin if we have specific prefixes (not wildcard only)
   const hasSpecificLinkPrefixes =
@@ -40,6 +53,8 @@ export function harden({
       allowedProtocols,
       blockedImageClass,
       blockedLinkClass,
+      linkBlockPolicy,
+      imageBlockPolicy,
     );
     visit(tree, visitor);
   };
@@ -213,6 +228,100 @@ function transformUrl(
 
 const SEEN = Symbol("node-seen");
 
+type BlockedResult = { type: "remove" } | { type: "replace"; element: Element };
+
+function resolveLinkBlockPolicy(
+  node: Element,
+  policy: LinkBlockPolicy,
+  blockedLinkClass: string,
+): BlockedResult {
+  if (policy === BlockPolicy.remove) {
+    return { type: "remove" };
+  }
+
+  if (policy === BlockPolicy.textOnly) {
+    const linkText = node.children
+      .filter((c): c is { type: "text"; value: string } => c.type === "text")
+      .map((c) => c.value)
+      .join("");
+    const href = String(node.properties.href || "");
+    return {
+      type: "replace",
+      element: {
+        type: "element",
+        tagName: "span",
+        properties: {},
+        children: [{ type: "text", value: `[${linkText}](${href})` }],
+      },
+    };
+  }
+
+  // "indicator" - default behavior
+  return {
+    type: "replace",
+    element: {
+      type: "element",
+      tagName: "span",
+      properties: {
+        title: "Blocked URL: " + String(node.properties.href),
+        class: blockedLinkClass,
+      },
+      children: [
+        ...node.children,
+        {
+          type: "text",
+          value: " [blocked]",
+        },
+      ],
+    },
+  };
+}
+
+function resolveImageBlockPolicy(
+  node: Element,
+  policy: ImageBlockPolicy,
+  blockedImageClass: string,
+): BlockedResult {
+  if (policy === BlockPolicy.remove) {
+    return { type: "remove" };
+  }
+
+  if (policy === BlockPolicy.textOnly) {
+    const altText = String(node.properties.alt || "");
+    const src = String(node.properties.src || "");
+    return {
+      type: "replace",
+      element: {
+        type: "element",
+        tagName: "span",
+        properties: {},
+        children: [{ type: "text", value: `![${altText}](${src})` }],
+      },
+    };
+  }
+
+  // "indicator" - default behavior
+  return {
+    type: "replace",
+    element: {
+      type: "element",
+      tagName: "span",
+      properties: {
+        class: blockedImageClass,
+      },
+      children: [
+        {
+          type: "text",
+          value:
+            "[Image blocked: " +
+            String(node.properties.alt || "No description") +
+            "]",
+        },
+      ],
+    },
+  };
+}
+
 const createVisitor = (
   defaultOrigin: string,
   allowedLinkPrefixes: string[],
@@ -221,6 +330,8 @@ const createVisitor = (
   allowedProtocols: string[],
   blockedImageClass: string,
   blockedLinkClass: string,
+  linkBlockPolicy: LinkBlockPolicy,
+  imageBlockPolicy: ImageBlockPolicy,
 ): BuildVisitor<HastNodes> => {
   const visitor: BuildVisitor<HastNodes> = (node, index, parent) => {
     if (
@@ -247,21 +358,12 @@ const createVisitor = (
         // prior to modifying the node's parent.
         visit(node, visitor);
         if (parent && typeof index === "number") {
-          parent.children[index] = {
-            type: "element",
-            tagName: "span",
-            properties: {
-              title: "Blocked URL: " + String(node.properties.href),
-              class: blockedLinkClass,
-            },
-            children: [
-              ...node.children,
-              {
-                type: "text",
-                value: " [blocked]",
-              },
-            ],
-          };
+          const result = resolveLinkBlockPolicy(node, linkBlockPolicy, blockedLinkClass);
+          if (result.type === "remove") {
+            parent.children.splice(index, 1);
+            return [SKIP, index];
+          }
+          parent.children[index] = result.element;
         }
         return SKIP;
       } else {
@@ -286,22 +388,12 @@ const createVisitor = (
         node[SEEN] = true;
         visit(node, visitor);
         if (parent && typeof index === "number") {
-          parent.children[index] = {
-            type: "element",
-            tagName: "span",
-            properties: {
-              class: blockedImageClass,
-            },
-            children: [
-              {
-                type: "text",
-                value:
-                  "[Image blocked: " +
-                  String(node.properties.alt || "No description") +
-                  "]",
-              },
-            ],
-          };
+          const result = resolveImageBlockPolicy(node, imageBlockPolicy, blockedImageClass);
+          if (result.type === "remove") {
+            parent.children.splice(index, 1);
+            return [SKIP, index];
+          }
+          parent.children[index] = result.element;
         }
         return SKIP;
       } else {

@@ -1394,5 +1394,181 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
       expect(screen.queryByRole("img")).not.toBeInTheDocument();
       expect(screen.getByText("[Image blocked: Test]")).toBeInTheDocument();
     });
-  })
+  });
+
+  describe("blockedLinkBehavior option", () => {
+    it("shows [blocked] suffix when 'indicator' (default)", () => {
+      render(
+        <HardenedReactMarkdown blockedLinkBehavior="indicator">
+          {"[My Link](https://evil.com)"}
+        </HardenedReactMarkdown>,
+      );
+
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
+      expect(screen.getByText("My Link [blocked]")).toBeInTheDocument();
+    });
+
+    it("shows [blocked] suffix by default (no option specified)", () => {
+      render(
+        <HardenedReactMarkdown>
+          {"[My Link](https://evil.com)"}
+        </HardenedReactMarkdown>,
+      );
+
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
+      expect(screen.getByText("My Link [blocked]")).toBeInTheDocument();
+    });
+
+    it("shows plain text when 'text-only'", () => {
+      render(
+        <HardenedReactMarkdown blockedLinkBehavior="text-only">
+          {"[My Link](https://evil.com)"}
+        </HardenedReactMarkdown>,
+      );
+
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
+      expect(screen.queryByText(/\[blocked\]/)).not.toBeInTheDocument();
+      expect(screen.getByText("My Link")).toBeInTheDocument();
+    });
+
+    it("removes element when 'remove'", () => {
+      render(
+        <HardenedReactMarkdown blockedLinkBehavior="remove">
+          {"Before [My Link](https://evil.com) After"}
+        </HardenedReactMarkdown>,
+      );
+
+      expect(screen.queryByRole("link")).not.toBeInTheDocument();
+      expect(screen.queryByText(/My Link/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/\[blocked\]/)).not.toBeInTheDocument();
+      // The text Before and After should still be there
+      expect(screen.getByText(/Before/)).toBeInTheDocument();
+      expect(screen.getByText(/After/)).toBeInTheDocument();
+    });
+
+    it("works alongside allowedLinkPrefixes", () => {
+      render(
+        <HardenedReactMarkdown
+          defaultOrigin="https://example.com"
+          allowedLinkPrefixes={["https://github.com/"]}
+          blockedLinkBehavior="text-only"
+        >
+          {"[Good](https://github.com/repo) [Bad](https://evil.com)"}
+        </HardenedReactMarkdown>,
+      );
+
+      // Good link should still work
+      const link = screen.getByRole("link");
+      expect(link).toHaveAttribute("href", "https://github.com/repo");
+
+      // Bad link should be plain text without [blocked]
+      expect(screen.queryByText(/\[blocked\]/)).not.toBeInTheDocument();
+      expect(screen.getByText("Bad")).toBeInTheDocument();
+    });
+  });
+
+  describe("blockedImageBehavior option", () => {
+    it("shows [Image blocked: Alt] when 'indicator' (default)", () => {
+      render(
+        <HardenedReactMarkdown blockedImageBehavior="indicator">
+          {"![My Image](https://evil.com/img.jpg)"}
+        </HardenedReactMarkdown>,
+      );
+
+      expect(screen.queryByRole("img")).not.toBeInTheDocument();
+      expect(screen.getByText("[Image blocked: My Image]")).toBeInTheDocument();
+    });
+
+    it("shows [Image blocked: No description] for images without alt when 'indicator'", () => {
+      render(
+        <HardenedReactMarkdown blockedImageBehavior="indicator">
+          {"![](https://evil.com/img.jpg)"}
+        </HardenedReactMarkdown>,
+      );
+
+      expect(screen.getByText("[Image blocked: No description]")).toBeInTheDocument();
+    });
+
+    it("shows alt text when 'text-only'", () => {
+      render(
+        <HardenedReactMarkdown blockedImageBehavior="text-only">
+          {"![My Image](https://evil.com/img.jpg)"}
+        </HardenedReactMarkdown>,
+      );
+
+      expect(screen.queryByRole("img")).not.toBeInTheDocument();
+      expect(screen.queryByText(/\[Image blocked:/)).not.toBeInTheDocument();
+      expect(screen.getByText("My Image")).toBeInTheDocument();
+    });
+
+    it("removes element when image has no alt text and 'text-only'", () => {
+      render(
+        <HardenedReactMarkdown blockedImageBehavior="text-only">
+          {"Before ![](https://evil.com/img.jpg) After"}
+        </HardenedReactMarkdown>,
+      );
+
+      expect(screen.queryByRole("img")).not.toBeInTheDocument();
+      expect(screen.queryByText(/\[Image blocked:/)).not.toBeInTheDocument();
+      // The text Before and After should still be there
+      expect(screen.getByText(/Before/)).toBeInTheDocument();
+      expect(screen.getByText(/After/)).toBeInTheDocument();
+    });
+
+    it("removes element when 'remove'", () => {
+      render(
+        <HardenedReactMarkdown blockedImageBehavior="remove">
+          {"Before ![My Image](https://evil.com/img.jpg) After"}
+        </HardenedReactMarkdown>,
+      );
+
+      expect(screen.queryByRole("img")).not.toBeInTheDocument();
+      expect(screen.queryByText(/My Image/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/\[Image blocked:/)).not.toBeInTheDocument();
+      // The text Before and After should still be there
+      expect(screen.getByText(/Before/)).toBeInTheDocument();
+      expect(screen.getByText(/After/)).toBeInTheDocument();
+    });
+
+    it("works alongside allowedImagePrefixes", () => {
+      render(
+        <HardenedReactMarkdown
+          defaultOrigin="https://example.com"
+          allowedImagePrefixes={["https://example.com/"]}
+          blockedImageBehavior="text-only"
+        >
+          {"![Good](https://example.com/img.jpg) ![Bad](https://evil.com/img.jpg)"}
+        </HardenedReactMarkdown>,
+      );
+
+      // Good image should still work
+      const img = screen.getByRole("img");
+      expect(img).toHaveAttribute("src", "https://example.com/img.jpg");
+
+      // Bad image should be plain text without indicator
+      expect(screen.queryByText(/\[Image blocked:/)).not.toBeInTheDocument();
+      expect(screen.getByText("Bad")).toBeInTheDocument();
+    });
+  });
+
+  describe("blockedLinkBehavior and blockedImageBehavior together", () => {
+    it("applies different behaviors to links and images", () => {
+      render(
+        <HardenedReactMarkdown
+          blockedLinkBehavior="text-only"
+          blockedImageBehavior="remove"
+        >
+          {"[Bad Link](https://evil.com) ![Bad Image](https://evil.com/img.jpg)"}
+        </HardenedReactMarkdown>,
+      );
+
+      // Link should be plain text (text-only)
+      expect(screen.queryByText(/\[blocked\]/)).not.toBeInTheDocument();
+      expect(screen.getByText("Bad Link")).toBeInTheDocument();
+
+      // Image should be removed entirely
+      expect(screen.queryByText(/\[Image blocked:/)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Bad Image/)).not.toBeInTheDocument();
+    });
+  });
 });
