@@ -1713,3 +1713,31 @@ describe("Blob URL support", () => {
     expect(link!.properties.href).toBe(blobUrl);
   });
 });
+
+describe("undefined nodes", () => {
+  it("does not crash when tree contains undefined children", async () => {
+    let tree: HastRoot | undefined;
+
+    const processor = unified()
+      .use(remarkParse)
+      .use(remarkRehype)
+      // Inject undefined children to simulate malformed AST
+      .use(() => (hastTree) => {
+        const root = hastTree as HastRoot;
+        for (const child of root.children) {
+          if ("children" in child && Array.isArray(child.children)) {
+            (child.children as unknown[]).push(undefined);
+          }
+        }
+      })
+      .use(harden, { defaultOrigin: "https://example.com" })
+      .use(() => (hastTree) => {
+        tree = hastTree as HastRoot;
+      })
+      .use(rehypeStringify);
+
+    // Should not throw
+    await expect(processor.process("Hello **world**")).resolves.not.toThrow();
+    expect(tree).toBeDefined();
+  });
+});

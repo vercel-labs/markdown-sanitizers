@@ -41,6 +41,16 @@ export function harden({
       blockedImageClass,
       blockedLinkClass,
     );
+    // Remove undefined/null nodes from children arrays to prevent
+    // unist-util-visit from crashing on malformed ASTs (e.g. from
+    // streaming markdown parsers). See vercel/streamdown#270.
+    visit(tree, (node) => {
+      if ("children" in node && Array.isArray(node.children)) {
+        node.children = node.children.filter(
+          (child: unknown) => child != null,
+        );
+      }
+    });
     visit(tree, visitor);
   };
 }
