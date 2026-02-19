@@ -1736,8 +1736,10 @@ describe("undefined nodes", () => {
       })
       .use(rehypeStringify);
 
-    // Should not throw
-    await expect(processor.process("Hello **world**")).resolves.not.toThrow();
+    // Should not throw and should preserve valid content
+    const result = await processor.process("Hello **world**");
     expect(tree).toBeDefined();
+    expect(String(result)).toContain("Hello");
+    expect(String(result)).toContain("world");
   });
 });
