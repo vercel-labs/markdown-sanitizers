@@ -95,13 +95,27 @@ const processor = unified()
 - Default: `[]` (only allows built-in safe protocols: `https:`, `http:`, `mailto:`, `irc:`, `ircs:`, `xmpp:`, `blob:`)
 - Example: `['tel:', 'postman:', 'vscode:']` or `['*']`
 
+#### `linkBlockPolicy?: BlockPolicyType`
+
+- Controls how blocked links are handled
+- `"indicator"` (default): Renders as plain text with `[blocked]` suffix and the blocked URL in a title attribute
+- `"text-only"`: Renders just the link text without any indicator or URL
+- `"remove"`: Removes the blocked link entirely from the output
+
+#### `imageBlockPolicy?: BlockPolicyType`
+
+- Controls how blocked images are handled
+- `"indicator"` (default): Renders as a placeholder span with `[Image blocked: {alt text}]`
+- `"text-only"`: Renders just the alt text (images with no alt text are removed)
+- `"remove"`: Removes the blocked image entirely from the output
+
 #### `blockedImageClass?: string`
 
-- When an image is blocked, by default it is rendered as a span with the text `[Image blocked: {alt text (if provided)}]`. `blockedImageClass` will be added as a class to this span to allow styling.
+- When an image is blocked with the `"indicator"` policy, the replacement span includes this class for styling.
 
 #### `blockedLinkClass?: string`
 
-- Same as above, but for blocked links.
+- Same as above, but for blocked links using the `"indicator"` policy.
 
 ## Examples
 
@@ -318,6 +332,31 @@ const processor = unified()
 
 **Security Note**: Even with `allowedProtocols: ['*']`, dangerous protocols like `javascript:`, `data:`, `file:`, and `vbscript:` are **always blocked** for security. Custom protocols are safe because they trigger OS-level protocol handlers and don't execute in the browser context.
 
+### Block Policies
+
+Control how blocked content is handled instead of the default `[blocked]` indicator:
+
+```ts
+import { harden, BlockPolicy } from "rehype-harden";
+import remarkParse from "remark-parse";
+import remarkRehype from "remarkRehype";
+import { unified } from "unified";
+
+const processor = unified()
+  .use(remarkParse)
+  .use(remarkRehype)
+  .use(harden, {
+    defaultOrigin: "https://mysite.com",
+    allowedLinkPrefixes: ["https://trusted.com/"],
+    allowedImagePrefixes: ["https://trusted.com/"],
+    linkBlockPolicy: "text-only", // Show link text only, no [blocked] indicator
+    imageBlockPolicy: "remove", // Remove blocked images entirely
+  })
+  .use(/* your compiler */);
+```
+
+Available policies: `"indicator"` (default), `"text-only"`, `"remove"`.
+
 ### Custom Styling for Blocked Content
 
 ```ts
@@ -354,9 +393,11 @@ const result = processor.processSync(markdownContent);
 
 ### Blocked Content Handling
 
-- **Blocked Links**: Rendered as plain text with `[blocked]` indicator
-- **Blocked Images**: Rendered as placeholder text with image description
-- **User Feedback**: Clear indication when content has been blocked for security
+Behavior is configurable per element type via `linkBlockPolicy` and `imageBlockPolicy`:
+
+- **`"indicator"`** (default): Blocked links show a `[blocked]` suffix; blocked images show `[Image blocked: {alt}]`
+- **`"text-only"`**: Outputs just the link text or image alt text with no indicator
+- **`"remove"`**: Removes blocked elements entirely from the output
 
 ### Attack Prevention
 

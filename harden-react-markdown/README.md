@@ -119,6 +119,20 @@ A new component with enhanced security that accepts all original props plus:
 - Default: `[]` (only allows built-in safe protocols: `https:`, `http:`, `mailto:`, `irc:`, `ircs:`, `xmpp:`, `blob:`)
 - Example: `['tel:', 'postman:', 'vscode:']` or `['*']`
 
+#### `linkBlockPolicy?: BlockPolicyType`
+
+- Controls how blocked links are handled
+- `"indicator"` (default): Renders as plain text with `[blocked]` suffix and the blocked URL in a title attribute
+- `"text-only"`: Renders just the link text without any indicator or URL
+- `"remove"`: Removes the blocked link entirely from the output
+
+#### `imageBlockPolicy?: BlockPolicyType`
+
+- Controls how blocked images are handled
+- `"indicator"` (default): Renders as a placeholder span with `[Image blocked: {alt text}]`
+- `"text-only"`: Renders just the alt text (images with no alt text are removed)
+- `"remove"`: Removes the blocked image entirely from the output
+
 All other props are passed through to the wrapped markdown component.
 
 ## Examples
@@ -230,6 +244,24 @@ You can also use the wildcard to allow any custom protocol:
 
 **Security Note**: Even with `allowedProtocols={["*"]}`, dangerous protocols like `javascript:`, `data:`, `file:`, and `vbscript:` are **always blocked** for security. Custom protocols are safe because they trigger OS-level protocol handlers and don't execute in the browser context.
 
+### Block Policies
+
+Control how blocked content is handled instead of the default `[blocked]` indicator:
+
+```tsx
+<HardenedMarkdown
+  defaultOrigin="https://mysite.com"
+  allowedLinkPrefixes={["https://trusted.com/"]}
+  allowedImagePrefixes={["https://trusted.com/"]}
+  linkBlockPolicy="text-only" // Show link text only, no [blocked] indicator
+  imageBlockPolicy="remove" // Remove blocked images entirely
+>
+  {markdownContent}
+</HardenedMarkdown>
+```
+
+Available policies: `"indicator"` (default), `"text-only"`, `"remove"`.
+
 ### Custom Components
 
 ```tsx
@@ -262,9 +294,11 @@ const HardenedCustomMarkdown = hardenReactMarkdown(CustomMarkdown);
 
 ### Blocked Content Handling
 
-- **Blocked Links**: Rendered as plain text with `[blocked]` indicator
-- **Blocked Images**: Rendered as placeholder text with image description
-- **User Feedback**: Clear indication when content has been blocked for security
+Behavior is configurable per element type via `linkBlockPolicy` and `imageBlockPolicy`:
+
+- **`"indicator"`** (default): Blocked links show a `[blocked]` suffix; blocked images show `[Image blocked: {alt}]`
+- **`"text-only"`**: Outputs just the link text or image alt text with no indicator
+- **`"remove"`**: Removes blocked elements entirely from the output
 
 ### Attack Prevention
 
