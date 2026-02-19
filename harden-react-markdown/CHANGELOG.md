@@ -1,5 +1,14 @@
 # harden-react-markdown
 
+## 1.1.8
+
+### Patch Changes
+
+- 8364805: Add configurable block policies for links and images (indicator, text-only, remove)
+- Updated dependencies [8364805]
+- Updated dependencies [6143737]
+  - rehype-harden@1.1.8
+
 ## 1.1.7
 
 ### Patch Changes
