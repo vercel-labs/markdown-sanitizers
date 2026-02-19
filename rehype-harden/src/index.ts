@@ -60,6 +60,10 @@ export function harden({
       linkBlockPolicy,
       imageBlockPolicy,
     );
+    // Strip null/undefined children before traversal to prevent
+    // unist-util-visit from crashing on malformed ASTs (e.g. from
+    // streaming markdown parsers). See vercel/streamdown#270.
+    stripNullChildren(tree);
     visit(tree, visitor);
   };
 }
@@ -228,6 +232,15 @@ function transformUrl(
     return parsedUrl.href;
   }
   return null;
+}
+
+function stripNullChildren(node: HastNodes) {
+  if ("children" in node && Array.isArray(node.children)) {
+    node.children = node.children.filter((child: unknown) => child != null);
+    for (const child of node.children) {
+      stripNullChildren(child);
+    }
+  }
 }
 
 const SEEN = Symbol("node-seen");

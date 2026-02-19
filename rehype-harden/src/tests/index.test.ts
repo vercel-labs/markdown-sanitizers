@@ -1751,3 +1751,33 @@ describe("imageBlockPolicy", () => {
     }
   });
 });
+
+describe("undefined nodes", () => {
+  it("does not crash when tree contains undefined children", async () => {
+    let tree: HastRoot | undefined;
+
+    const processor = unified()
+      .use(remarkParse)
+      .use(remarkRehype)
+      // Inject undefined children to simulate malformed AST
+      .use(() => (hastTree) => {
+        const root = hastTree as HastRoot;
+        for (const child of root.children) {
+          if ("children" in child && Array.isArray(child.children)) {
+            (child.children as unknown[]).push(undefined);
+          }
+        }
+      })
+      .use(harden, { defaultOrigin: "https://example.com" })
+      .use(() => (hastTree) => {
+        tree = hastTree as HastRoot;
+      })
+      .use(rehypeStringify);
+
+    // Should not throw and should preserve valid content
+    const result = await processor.process("Hello **world**");
+    expect(tree).toBeDefined();
+    expect(String(result)).toContain("Hello");
+    expect(String(result)).toContain("world");
+  });
+});
