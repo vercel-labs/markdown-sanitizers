@@ -3,9 +3,9 @@
 import { ComponentType, ComponentProps } from "react";
 import type { Options } from "react-markdown";
 import { defaultUrlTransform } from "react-markdown";
-import { harden, type LinkBlockPolicy, type ImageBlockPolicy } from "rehype-harden";
+import { harden, type BlockPolicyType } from "rehype-harden";
 
-export type { LinkBlockPolicy, ImageBlockPolicy };
+export type { BlockPolicyType };
 
 interface HardenReactMarkdownOptions {
   defaultOrigin?: string;
@@ -13,8 +13,8 @@ interface HardenReactMarkdownOptions {
   allowedImagePrefixes?: string[];
   allowDataImages?: boolean;
   allowedProtocols?: string[];
-  linkBlockPolicy?: LinkBlockPolicy;
-  imageBlockPolicy?: ImageBlockPolicy;
+  linkBlockPolicy?: BlockPolicyType;
+  imageBlockPolicy?: BlockPolicyType;
 }
 
 export default function hardenReactMarkdown(

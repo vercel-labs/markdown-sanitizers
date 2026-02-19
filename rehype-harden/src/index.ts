@@ -7,8 +7,12 @@ export const BlockPolicy = {
   remove: "remove",
 } as const;
 
-export type LinkBlockPolicy = (typeof BlockPolicy)[keyof typeof BlockPolicy];
-export type ImageBlockPolicy = (typeof BlockPolicy)[keyof typeof BlockPolicy];
+export type BlockPolicyType = (typeof BlockPolicy)[keyof typeof BlockPolicy];
+
+/** @deprecated Use BlockPolicyType instead */
+export type LinkBlockPolicy = BlockPolicyType;
+/** @deprecated Use BlockPolicyType instead */
+export type ImageBlockPolicy = BlockPolicyType;
 
 export function harden({
   defaultOrigin = "",
@@ -28,8 +32,8 @@ export function harden({
   allowedProtocols?: string[];
   blockedImageClass?: string;
   blockedLinkClass?: string;
-  linkBlockPolicy?: LinkBlockPolicy;
-  imageBlockPolicy?: ImageBlockPolicy;
+  linkBlockPolicy?: BlockPolicyType;
+  imageBlockPolicy?: BlockPolicyType;
 }) {
   // Only require defaultOrigin if we have specific prefixes (not wildcard only)
   const hasSpecificLinkPrefixes =
@@ -232,7 +236,7 @@ type BlockedResult = { type: "remove" } | { type: "replace"; element: Element };
 
 function resolveLinkBlockPolicy(
   node: Element,
-  policy: LinkBlockPolicy,
+  policy: BlockPolicyType,
   blockedLinkClass: string,
 ): BlockedResult {
   if (policy === BlockPolicy.remove) {
@@ -274,7 +278,7 @@ function resolveLinkBlockPolicy(
 
 function resolveImageBlockPolicy(
   node: Element,
-  policy: ImageBlockPolicy,
+  policy: BlockPolicyType,
   blockedImageClass: string,
 ): BlockedResult {
   if (policy === BlockPolicy.remove) {
@@ -327,8 +331,8 @@ const createVisitor = (
   allowedProtocols: string[],
   blockedImageClass: string,
   blockedLinkClass: string,
-  linkBlockPolicy: LinkBlockPolicy,
-  imageBlockPolicy: ImageBlockPolicy,
+  linkBlockPolicy: BlockPolicyType,
+  imageBlockPolicy: BlockPolicyType,
 ): BuildVisitor<HastNodes> => {
   const visitor: BuildVisitor<HastNodes> = (node, index, parent) => {
     if (
