@@ -1396,10 +1396,10 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
     });
   });
 
-  describe("blockedLinkBehavior option", () => {
+  describe("linkBlockPolicy option", () => {
     it("shows [blocked] suffix when 'indicator' (default)", () => {
       render(
-        <HardenedReactMarkdown blockedLinkBehavior="indicator">
+        <HardenedReactMarkdown linkBlockPolicy="indicator">
           {"[My Link](https://evil.com)"}
         </HardenedReactMarkdown>,
       );
@@ -1421,7 +1421,7 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
 
     it("shows plain text when 'text-only'", () => {
       render(
-        <HardenedReactMarkdown blockedLinkBehavior="text-only">
+        <HardenedReactMarkdown linkBlockPolicy="text-only">
           {"[My Link](https://evil.com)"}
         </HardenedReactMarkdown>,
       );
@@ -1433,7 +1433,7 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
 
     it("removes element when 'remove'", () => {
       render(
-        <HardenedReactMarkdown blockedLinkBehavior="remove">
+        <HardenedReactMarkdown linkBlockPolicy="remove">
           {"Before [My Link](https://evil.com) After"}
         </HardenedReactMarkdown>,
       );
@@ -1451,7 +1451,7 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
         <HardenedReactMarkdown
           defaultOrigin="https://example.com"
           allowedLinkPrefixes={["https://github.com/"]}
-          blockedLinkBehavior="text-only"
+          linkBlockPolicy="text-only"
         >
           {"[Good](https://github.com/repo) [Bad](https://evil.com)"}
         </HardenedReactMarkdown>,
@@ -1467,10 +1467,10 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
     });
   });
 
-  describe("blockedImageBehavior option", () => {
+  describe("imageBlockPolicy option", () => {
     it("shows [Image blocked: Alt] when 'indicator' (default)", () => {
       render(
-        <HardenedReactMarkdown blockedImageBehavior="indicator">
+        <HardenedReactMarkdown imageBlockPolicy="indicator">
           {"![My Image](https://evil.com/img.jpg)"}
         </HardenedReactMarkdown>,
       );
@@ -1481,7 +1481,7 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
 
     it("shows [Image blocked: No description] for images without alt when 'indicator'", () => {
       render(
-        <HardenedReactMarkdown blockedImageBehavior="indicator">
+        <HardenedReactMarkdown imageBlockPolicy="indicator">
           {"![](https://evil.com/img.jpg)"}
         </HardenedReactMarkdown>,
       );
@@ -1491,7 +1491,7 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
 
     it("shows alt text when 'text-only'", () => {
       render(
-        <HardenedReactMarkdown blockedImageBehavior="text-only">
+        <HardenedReactMarkdown imageBlockPolicy="text-only">
           {"![My Image](https://evil.com/img.jpg)"}
         </HardenedReactMarkdown>,
       );
@@ -1503,7 +1503,7 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
 
     it("removes element when image has no alt text and 'text-only'", () => {
       render(
-        <HardenedReactMarkdown blockedImageBehavior="text-only">
+        <HardenedReactMarkdown imageBlockPolicy="text-only">
           {"Before ![](https://evil.com/img.jpg) After"}
         </HardenedReactMarkdown>,
       );
@@ -1517,7 +1517,7 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
 
     it("removes element when 'remove'", () => {
       render(
-        <HardenedReactMarkdown blockedImageBehavior="remove">
+        <HardenedReactMarkdown imageBlockPolicy="remove">
           {"Before ![My Image](https://evil.com/img.jpg) After"}
         </HardenedReactMarkdown>,
       );
@@ -1535,7 +1535,7 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
         <HardenedReactMarkdown
           defaultOrigin="https://example.com"
           allowedImagePrefixes={["https://example.com/"]}
-          blockedImageBehavior="text-only"
+          imageBlockPolicy="text-only"
         >
           {"![Good](https://example.com/img.jpg) ![Bad](https://evil.com/img.jpg)"}
         </HardenedReactMarkdown>,
@@ -1551,12 +1551,12 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
     });
   });
 
-  describe("blockedLinkBehavior and blockedImageBehavior together", () => {
+  describe("linkBlockPolicy and imageBlockPolicy together", () => {
     it("applies different behaviors to links and images", () => {
       render(
         <HardenedReactMarkdown
-          blockedLinkBehavior="text-only"
-          blockedImageBehavior="remove"
+          linkBlockPolicy="text-only"
+          imageBlockPolicy="remove"
         >
           {"[Bad Link](https://evil.com) ![Bad Image](https://evil.com/img.jpg)"}
         </HardenedReactMarkdown>,
