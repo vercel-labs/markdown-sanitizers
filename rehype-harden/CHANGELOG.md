@@ -1,5 +1,12 @@
 # rehype-harden
 
+## 1.1.8
+
+### Patch Changes
+
+- 8364805: Add configurable block policies for links and images (indicator, text-only, remove)
+- 6143737: Handle undefined/null nodes in AST children from streaming markdown parsers
+
 ## 1.1.7
 
 ### Patch Changes
