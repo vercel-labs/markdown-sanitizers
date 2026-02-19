@@ -1717,7 +1717,7 @@ describe("Blob URL support", () => {
     it.each([
       { markdown: "[Link](https://evil.com)", policy: undefined, expected: "Link [blocked]" },
       { markdown: "[Link](https://evil.com)", policy: "indicator" as const, expected: "Link [blocked]" },
-      { markdown: "[Link](https://evil.com)", policy: "text-only" as const, expected: "[Link](https://evil.com)" },
+      { markdown: "[Link](https://evil.com)", policy: "text-only" as const, expected: "Link" },
       { markdown: "[Link](https://evil.com)", policy: "remove" as const, expected: "" },
     ])("$markdown + $policy → $expected", async ({ markdown, policy, expected }) => {
       const tree = await processMarkdown(markdown, policy ? { linkBlockPolicy: policy } : {});
@@ -1735,10 +1735,10 @@ describe("Blob URL support", () => {
     it.each([
       { markdown: "![Alt](https://evil.com/x.jpg)", policy: undefined, expected: "[Image blocked: Alt]" },
       { markdown: "![Alt](https://evil.com/x.jpg)", policy: "indicator" as const, expected: "[Image blocked: Alt]" },
-      { markdown: "![Alt](https://evil.com/x.jpg)", policy: "text-only" as const, expected: "![Alt](https://evil.com/x.jpg)" },
+      { markdown: "![Alt](https://evil.com/x.jpg)", policy: "text-only" as const, expected: "Alt" },
       { markdown: "![Alt](https://evil.com/x.jpg)", policy: "remove" as const, expected: "" },
       { markdown: "![](https://evil.com/x.jpg)", policy: undefined, expected: "[Image blocked: No description]" },
-      { markdown: "![](https://evil.com/x.jpg)", policy: "text-only" as const, expected: "![](https://evil.com/x.jpg)" },
+      { markdown: "![](https://evil.com/x.jpg)", policy: "text-only" as const, expected: "" },
     ])("$markdown + $policy → $expected", async ({ markdown, policy, expected }) => {
       const tree = await processMarkdown(markdown, policy ? { imageBlockPolicy: policy } : {});
       const text = getTextContent(findElement(tree, "p")!);

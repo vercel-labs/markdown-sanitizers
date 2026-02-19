@@ -240,18 +240,13 @@ function resolveLinkBlockPolicy(
   }
 
   if (policy === BlockPolicy.textOnly) {
-    const linkText = node.children
-      .filter((c): c is { type: "text"; value: string } => c.type === "text")
-      .map((c) => c.value)
-      .join("");
-    const href = String(node.properties.href || "");
     return {
       type: "replace",
       element: {
         type: "element",
         tagName: "span",
         properties: {},
-        children: [{ type: "text", value: `[${linkText}](${href})` }],
+        children: [...node.children],
       },
     };
   }
@@ -288,14 +283,16 @@ function resolveImageBlockPolicy(
 
   if (policy === BlockPolicy.textOnly) {
     const altText = String(node.properties.alt || "");
-    const src = String(node.properties.src || "");
+    if (!altText) {
+      return { type: "remove" };
+    }
     return {
       type: "replace",
       element: {
         type: "element",
         tagName: "span",
         properties: {},
-        children: [{ type: "text", value: `![${altText}](${src})` }],
+        children: [{ type: "text", value: altText }],
       },
     };
   }
