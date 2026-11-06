@@ -10,6 +10,8 @@ concurrency: ${{ github.workflow }}-${{ github.ref }}
 permissions:
   contents: write
   pull-requests: write
+  # npm trusted publishing (OIDC); no NPM_TOKEN needed.
+  id-token: write
 
 jobs:
   release:
@@ -46,4 +48,3 @@ jobs:
           commitMode: github-api
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

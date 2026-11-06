@@ -27,7 +27,8 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/vercel/harden-react-markdown.git"
+    "url": "git+https://github.com/vercel-labs/markdown-sanitizers.git",
+    "directory": "harden-react-markdown"
   },
   "bugs": {
     "url": "https://github.com/vercel/harden-react-markdown/issues"
