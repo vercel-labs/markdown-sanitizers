@@ -100,6 +100,24 @@ function isPathRelativeUrl(url: unknown): boolean {
   return url.startsWith("/") || url.startsWith("./") || url.startsWith("../");
 }
 
+/**
+ * Serializes a parsed URL as a path-relative reference (path + query + hash).
+ *
+ * After normalization (dot segments such as `/./`, `/a/../`, `/%2e/` are
+ * resolved), a pathname can begin with an empty segment, e.g. `//host/x`.
+ * Emitted on its own, such a string is a network-path reference and would be
+ * resolved against a different host than the one that was validated. Like the
+ * WHATWG URL serializer does for this case, prefix `/.` so that the output
+ * still resolves to exactly the same path on the same origin.
+ */
+function toPathRelativeUrl(parsedUrl: URL): string {
+  const path = parsedUrl.pathname + parsedUrl.search + parsedUrl.hash;
+  if (parsedUrl.pathname.startsWith("//")) {
+    return "/." + path;
+  }
+  return path;
+}
+
 const safeProtocols = new Set([
   "https:",
   "http:",
@@ -215,7 +233,7 @@ function transformUrl(
     })
   ) {
     if (inputWasRelative) {
-      return parsedUrl.pathname + parsedUrl.search + parsedUrl.hash;
+      return toPathRelativeUrl(parsedUrl);
     }
     return parsedUrl.href;
   }
@@ -227,7 +245,7 @@ function transformUrl(
       return null;
     }
     if (inputWasRelative) {
-      return parsedUrl.pathname + parsedUrl.search + parsedUrl.hash;
+      return toPathRelativeUrl(parsedUrl);
     }
     return parsedUrl.href;
   }

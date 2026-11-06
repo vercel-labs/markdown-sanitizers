@@ -1781,3 +1781,333 @@ describe("undefined nodes", () => {
     expect(String(result)).toContain("world");
   });
 });
+
+describe("Path-relative URLs whose normalized pathname begins with an empty segment", () => {
+  const ORIGIN = "https://app.example";
+  // Pages on the defaultOrigin from which the rendered output could be viewed.
+  const PAGES = [
+    `${ORIGIN}/`,
+    `${ORIGIN}/chat/123`,
+    `${ORIGIN}/a/b/c/`,
+    `${ORIGIN}/a/b/c?x=1#y`,
+  ];
+
+  // Each input normalizes (dot segments resolved) to a pathname that begins
+  // with "//". `expectedPathname` is the pathname the URL resolves to when
+  // parsed against ORIGIN.
+  const variants: Array<{ input: string; expectedPathname: string }> = [
+    // Single-dot segments
+    { input: "/.//other.example/x.png", expectedPathname: "//other.example/x.png" },
+    { input: "/././/other.example/x.png", expectedPathname: "//other.example/x.png" },
+    { input: "/./././/other.example/x.png", expectedPathname: "//other.example/x.png" },
+    { input: ".//other.example/x.png", expectedPathname: "//other.example/x.png" },
+    { input: "././/other.example/x.png", expectedPathname: "//other.example/x.png" },
+    // Double-dot segments
+    { input: "/a/..//other.example/x.png", expectedPathname: "//other.example/x.png" },
+    { input: "/a/b/../..//other.example/x.png", expectedPathname: "//other.example/x.png" },
+    { input: "/..//other.example/x.png", expectedPathname: "//other.example/x.png" },
+    { input: "/../..//other.example/x.png", expectedPathname: "//other.example/x.png" },
+    { input: "../..//other.example/x.png", expectedPathname: "//other.example/x.png" },
+    { input: "./..//other.example/x.png", expectedPathname: "//other.example/x.png" },
+    { input: "../other/..//other.example/x.png", expectedPathname: "//other.example/x.png" },
+    // Percent-encoded dot segments (lower and upper case)
+    { input: "/%2e//other.example/x.png", expectedPathname: "//other.example/x.png" },
+    { input: "/%2E//other.example/x.png", expectedPathname: "//other.example/x.png" },
+    { input: "/%2e%2e//other.example/x.png", expectedPathname: "//other.example/x.png" },
+    { input: "/%2E%2E//other.example/x.png", expectedPathname: "//other.example/x.png" },
+    { input: "/.%2e//other.example/x.png", expectedPathname: "//other.example/x.png" },
+    { input: "/%2e.//other.example/x.png", expectedPathname: "//other.example/x.png" },
+    { input: "/a/%2e%2e//other.example/x.png", expectedPathname: "//other.example/x.png" },
+    { input: "/a/.%2E//other.example/x.png", expectedPathname: "//other.example/x.png" },
+    // More than two leading slashes after normalization
+    { input: "/.///other.example/x.png", expectedPathname: "///other.example/x.png" },
+    { input: "/.////other.example/x.png", expectedPathname: "////other.example/x.png" },
+    { input: "/a/..///other.example/x.png", expectedPathname: "///other.example/x.png" },
+    // Only an empty segment
+    { input: "/.//", expectedPathname: "//" },
+    { input: "/a/..//", expectedPathname: "//" },
+    // Hosts that look like IPs, ports, credentials
+    { input: "/.//127.0.0.1/x.png", expectedPathname: "//127.0.0.1/x.png" },
+    { input: "/.//other.example:8080/x.png", expectedPathname: "//other.example:8080/x.png" },
+    { input: "/.//user@other.example/x.png", expectedPathname: "//user@other.example/x.png" },
+    { input: "/.//[::1]/x.png", expectedPathname: "//%5B::1%5D/x.png" },
+  ];
+
+  const withSuffixes = variants.flatMap(({ input, expectedPathname }) => [
+    { input, expectedPathname, search: "", hash: "" },
+    { input: `${input}?q=1`, expectedPathname, search: "?q=1", hash: "" },
+    { input: `${input}#frag`, expectedPathname, search: "", hash: "#frag" },
+    { input: `${input}?q=1&r=2#frag`, expectedPathname, search: "?q=1&r=2", hash: "#frag" },
+  ]);
+
+  const configs: Array<{ name: string; options: Parameters<typeof harden>[0]; origin: string }> = [
+    {
+      name: "defaultOrigin + '/' prefix",
+      options: { defaultOrigin: ORIGIN, allowedLinkPrefixes: ["/"], allowedImagePrefixes: ["/"] },
+      origin: ORIGIN,
+    },
+    {
+      name: "defaultOrigin + absolute origin prefix",
+      options: {
+        defaultOrigin: ORIGIN,
+        allowedLinkPrefixes: [`${ORIGIN}/`],
+        allowedImagePrefixes: [`${ORIGIN}/`],
+      },
+      origin: ORIGIN,
+    },
+    {
+      name: "defaultOrigin + wildcard prefix",
+      options: { defaultOrigin: ORIGIN, allowedLinkPrefixes: ["*"], allowedImagePrefixes: ["*"] },
+      origin: ORIGIN,
+    },
+    {
+      name: "wildcard prefix without defaultOrigin",
+      options: { allowedLinkPrefixes: ["*"], allowedImagePrefixes: ["*"] },
+      origin: ORIGIN,
+    },
+  ];
+
+  // The output must resolve to the same origin and the same path as the input,
+  // regardless of which page on the origin it is rendered on.
+  function expectSameOriginAndPath(
+    output: unknown,
+    expected: { expectedPathname: string; search: string; hash: string },
+  ) {
+    expect(typeof output).toBe("string");
+    const value = output as string;
+    expect(value.startsWith("//")).toBe(false);
+    expect(value).not.toMatch(/^[\\/]{2}/);
+    expect(value).not.toMatch(/^[a-z][a-z0-9+.-]*:/i);
+    for (const page of PAGES) {
+      const resolved = new URL(value, page);
+      expect(resolved.origin).toBe(ORIGIN);
+      expect(resolved.pathname).toBe(expected.expectedPathname);
+      expect(resolved.search).toBe(expected.search);
+      expect(resolved.hash).toBe(expected.hash);
+    }
+  }
+
+  for (const config of configs) {
+    describe(config.name, () => {
+      it.each(withSuffixes)("image: $input", async (variant) => {
+        const tree = await processMarkdown(`![Img](<${variant.input}>)`, config.options);
+        const img = findElement(tree, "img");
+        expect(img).not.toBeNull();
+        expectSameOriginAndPath(img!.properties.src, variant);
+      });
+
+      it.each(withSuffixes)("link: $input", async (variant) => {
+        const tree = await processMarkdown(`[Link](<${variant.input}>)`, config.options);
+        const link = findElement(tree, "a");
+        expect(link).not.toBeNull();
+        expectSameOriginAndPath(link!.properties.href, variant);
+      });
+
+      it.each(withSuffixes)("reference-style link and image: $input", async (variant) => {
+        const tree = await processMarkdown(
+          `[Link][ref] ![Img][ref]\n\n[ref]: <${variant.input}>`,
+          config.options,
+        );
+        const link = findElement(tree, "a");
+        const img = findElement(tree, "img");
+        expect(link).not.toBeNull();
+        expect(img).not.toBeNull();
+        expectSameOriginAndPath(link!.properties.href, variant);
+        expectSameOriginAndPath(img!.properties.src, variant);
+      });
+
+      it.each(withSuffixes)("output is stable when processed again: $input", async (variant) => {
+        const first = await processMarkdown(`![Img](<${variant.input}>)`, config.options);
+        const firstSrc = findElement(first, "img")!.properties.src as string;
+        const second = await processMarkdown(`![Img](<${firstSrc}>)`, config.options);
+        expect(findElement(second, "img")!.properties.src).toBe(firstSrc);
+      });
+    });
+  }
+
+  it.each([
+    ["/.//other.example/x.png", "/.//other.example/x.png"],
+    ["/a/..//other.example/x.png", "/.//other.example/x.png"],
+    ["/%2e//other.example/x.png", "/.//other.example/x.png"],
+    ["/..//other.example", "/.//other.example"],
+    [".//other.example?a=b#c", "/.//other.example?a=b#c"],
+    ["/.///other.example", "/.///other.example"],
+  ])("emits a stable relative form for %s", async (input, expected) => {
+    const tree = await processMarkdown(`![Img](<${input}>) [Link](<${input}>)`, {
+      defaultOrigin: ORIGIN,
+      allowedImagePrefixes: ["/"],
+      allowedLinkPrefixes: ["/"],
+    });
+    expect(findElement(tree, "img")!.properties.src).toBe(expected);
+    expect(findElement(tree, "a")!.properties.href).toBe(expected);
+  });
+
+  it("serializes to HTML with a same-origin src and href", async () => {
+    const html = String(
+      await unified()
+        .use(remarkParse)
+        .use(remarkRehype)
+        .use(harden, {
+          defaultOrigin: ORIGIN,
+          allowedImagePrefixes: ["/"],
+          allowedLinkPrefixes: ["/"],
+        })
+        .use(rehypeStringify)
+        .process("![Img](/.//other.example/x.png) [Link](/a/..//other.example/x)"),
+    );
+    expect(html).not.toMatch(/(src|href)="\/\//);
+    expect(html).toContain('src="/.//other.example/x.png"');
+    expect(html).toContain('href="/.//other.example/x"');
+  });
+
+  describe("values that only reach the plugin through raw HTML / other rehype plugins", () => {
+    // Markdown parsing percent-encodes backslashes and strips whitespace, so
+    // these are exercised directly on a HAST tree.
+    function runOnTree(
+      tagName: "a" | "img",
+      value: string,
+      options: Parameters<typeof harden>[0],
+    ): Element | null {
+      const tree: HastRoot = {
+        type: "root",
+        children: [
+          {
+            type: "element",
+            tagName: "p",
+            properties: {},
+            children: [
+              {
+                type: "element",
+                tagName,
+                properties: tagName === "a" ? { href: value } : { src: value, alt: "x" },
+                children: tagName === "a" ? [{ type: "text", value: "x" }] : [],
+              },
+            ],
+          },
+        ],
+      };
+      harden(options)(tree);
+      return findElement(tree, tagName);
+    }
+
+    const rawVariants = [
+      // Backslashes are treated as path separators for http(s) URLs
+      { input: "/.\\/other.example/x.png", expectedPathname: "//other.example/x.png" },
+      { input: "/.\\\\other.example/x.png", expectedPathname: "//other.example/x.png" },
+      { input: "/a\\..//other.example/x.png", expectedPathname: "//other.example/x.png" },
+      { input: "/a/..\\\\other.example/x.png", expectedPathname: "//other.example/x.png" },
+      { input: "/%2e\\/other.example/x.png", expectedPathname: "//other.example/x.png" },
+      // Tabs and newlines are stripped by the URL parser
+      { input: "/.\t//other.example/x.png", expectedPathname: "//other.example/x.png" },
+      { input: "/.\n//other.example/x.png", expectedPathname: "//other.example/x.png" },
+      { input: "/.\r\n//other.example/x.png", expectedPathname: "//other.example/x.png" },
+      { input: "/\t.//other.example/x.png", expectedPathname: "//other.example/x.png" },
+      { input: "/a/.\t.//other.example/x.png", expectedPathname: "//other.example/x.png" },
+      // Unescaped variants that markdown would otherwise reject
+      { input: "/.//other.example/x y.png", expectedPathname: "//other.example/x%20y.png" },
+    ];
+
+    const rawConfigs = configs.filter((c) => c.options.defaultOrigin);
+
+    for (const config of rawConfigs) {
+      describe(config.name, () => {
+        it.each(rawVariants)("img src: $input", ({ input, expectedPathname }) => {
+          const img = runOnTree("img", input, config.options);
+          expect(img).not.toBeNull();
+          expectSameOriginAndPath(img!.properties.src, { expectedPathname, search: "", hash: "" });
+        });
+
+        it.each(rawVariants)("a href: $input", ({ input, expectedPathname }) => {
+          const link = runOnTree("a", input, config.options);
+          expect(link).not.toBeNull();
+          expectSameOriginAndPath(link!.properties.href, { expectedPathname, search: "", hash: "" });
+        });
+      });
+    }
+
+    it.each([
+      "//other.example/x.png",
+      "///other.example/x.png",
+      "/\\other.example/x.png",
+      "\\\\other.example/x.png",
+      "/\t/other.example/x.png",
+      "/\n/other.example/x.png",
+      " //other.example/x.png",
+    ])("still blocks network-path references with a '/' prefix: %j", (input) => {
+      const options = {
+        defaultOrigin: ORIGIN,
+        allowedLinkPrefixes: ["/"],
+        allowedImagePrefixes: ["/"],
+      };
+      expect(runOnTree("img", input, options)).toBeNull();
+      expect(runOnTree("a", input, options)).toBeNull();
+    });
+  });
+
+  describe("prefix restrictions are still applied to the normalized path", () => {
+    const options = {
+      defaultOrigin: ORIGIN,
+      allowedImagePrefixes: [`${ORIGIN}/images/`],
+      allowedLinkPrefixes: [`${ORIGIN}/docs/`],
+    };
+
+    it.each([
+      "/images/..//other.example/x.png",
+      "/images/%2e%2e//other.example/x.png",
+      "/images/../..//other.example/x.png",
+      "/.//other.example/images/x.png",
+    ])("blocks image %s that leaves the allowed prefix", async (input) => {
+      const tree = await processMarkdown(`![Img](<${input}>)`, options);
+      expect(findElement(tree, "img")).toBeNull();
+      expect(findSpanWithText(tree, "[Image blocked: Img]")).not.toBeNull();
+    });
+
+    it.each([
+      "/docs/..//other.example/x",
+      "/docs/%2E%2E//other.example/x",
+      "/.//other.example/docs/x",
+    ])("blocks link %s that leaves the allowed prefix", async (input) => {
+      const tree = await processMarkdown(`[Link](<${input}>)`, options);
+      expect(findElement(tree, "a")).toBeNull();
+      expect(findSpanWithText(tree, "[blocked]")).not.toBeNull();
+    });
+
+    it.each([
+      ["/images/.//other.example/x.png", "/images//other.example/x.png"],
+      ["/images/a/..//other.example/x.png", "/images//other.example/x.png"],
+      ["/images/%2e//other.example/x.png", "/images//other.example/x.png"],
+    ])("keeps empty segments inside an allowed prefix: %s", async (input, expected) => {
+      const tree = await processMarkdown(`![Img](<${input}>)`, options);
+      const src = findElement(tree, "img")!.properties.src as string;
+      expect(src).toBe(expected);
+      expect(new URL(src, `${ORIGIN}/page`).origin).toBe(ORIGIN);
+    });
+  });
+
+  describe("ordinary relative URLs are unchanged", () => {
+    const options = {
+      defaultOrigin: ORIGIN,
+      allowedImagePrefixes: ["/"],
+      allowedLinkPrefixes: ["/"],
+    };
+
+    it.each([
+      ["/images/a.png", "/images/a.png"],
+      ["/images/a.png?x=1#y", "/images/a.png?x=1#y"],
+      ["./a.png", "/a.png"],
+      ["../a.png", "/a.png"],
+      ["/a/../b.png", "/b.png"],
+      ["/a/./b.png", "/a/b.png"],
+      ["/%2e/b.png", "/b.png"],
+      ["/", "/"],
+      ["/other.example/x.png", "/other.example/x.png"],
+      ["/.%2f/other.example", "/.%2f/other.example"],
+      ["/%2f%2fother.example", "/%2f%2fother.example"],
+      ["/a//b.png", "/a//b.png"],
+    ])("%s -> %s", async (input, expected) => {
+      const tree = await processMarkdown(`![Img](<${input}>) [Link](<${input}>)`, options);
+      expect(findElement(tree, "img")!.properties.src).toBe(expected);
+      expect(findElement(tree, "a")!.properties.href).toBe(expected);
+    });
+  });
+});
