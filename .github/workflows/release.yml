@@ -7,6 +7,10 @@ on:
 
 concurrency: ${{ github.workflow }}-${{ github.ref }}
 
+permissions:
+  contents: write
+  pull-requests: write
+
 jobs:
   release:
     name: Release
@@ -37,6 +41,9 @@ jobs:
         with:
           publish: pnpm release
           version: pnpm version-packages
+          # Repo rules require verified signatures; commits made via the
+          # GitHub API are signed by GitHub, unlike local git-cli commits.
+          commitMode: github-api
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
