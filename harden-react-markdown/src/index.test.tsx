@@ -82,6 +82,76 @@ describe("HardenedMarkdown", () => {
   });
 
   describe("URL transformation", () => {
+    it("preserves explicitly allowed custom-protocol links in rendered output", () => {
+      render(
+        <HardenedReactMarkdown allowedProtocols={["vscode:", "postman:"]}>
+          {"[VS Code](vscode://file/workspace/app.ts) [Postman](postman://open)"}
+        </HardenedReactMarkdown>,
+      );
+
+      expect(screen.getByRole("link", { name: "VS Code" })).toHaveAttribute(
+        "href",
+        "vscode://file/workspace/app.ts",
+      );
+      expect(screen.getByRole("link", { name: "Postman" })).toHaveAttribute(
+        "href",
+        "postman://open",
+      );
+    });
+
+    it("preserves allowed custom protocols in raw HTML links after hardening", () => {
+      render(
+        <HardenedReactMarkdown allowedProtocols={["vscode:"]} rehypePlugins={[rehypeRaw]}>
+          {'<a href="vscode://file/workspace/app.ts">Open editor</a>'}
+        </HardenedReactMarkdown>,
+      );
+
+      expect(screen.getByRole("link", { name: "Open editor" })).toHaveAttribute(
+        "href",
+        "vscode://file/workspace/app.ts",
+      );
+    });
+
+    it("does not expose blob URLs rejected by React Markdown's default transform", () => {
+      const malformedBlobUrl = "blob:javascript:alert(1)";
+      render(
+        <HardenedReactMarkdown allowedProtocols={["*"]}>
+          {`[Open](<${malformedBlobUrl}>) ![Preview](<${malformedBlobUrl}>)`}
+        </HardenedReactMarkdown>,
+      );
+
+      expect(screen.getByText("Open").closest("a")).toHaveAttribute("href", "");
+      expect(screen.getByRole("img", { name: "Preview" })).not.toHaveAttribute("src");
+    });
+
+    it("still blocks dangerous protocols when allowing custom protocols", () => {
+      render(
+        <HardenedReactMarkdown allowedProtocols={["*"]}>
+          {"[Unsafe](javascript:alert(1)) [Safe](vscode://file/workspace/app.ts)"}
+        </HardenedReactMarkdown>,
+      );
+
+      expect(screen.queryByRole("link", { name: "Unsafe" })).not.toBeInTheDocument();
+      expect(screen.getByText("Unsafe [blocked]")).toBeInTheDocument();
+      expect(screen.getByRole("link", { name: "Safe" })).toHaveAttribute(
+        "href",
+        "vscode://file/workspace/app.ts",
+      );
+    });
+
+    it("honors a user-provided urlTransform even for allowed custom protocols", () => {
+      render(
+        <HardenedReactMarkdown
+          allowedProtocols={["vscode:"]}
+          urlTransform={() => ""}
+        >
+          {"[Open](vscode://file/workspace/app.ts)"}
+        </HardenedReactMarkdown>,
+      );
+
+      expect(screen.getByText("Open").closest("a")).toHaveAttribute("href", "");
+    });
+
     it("preserves relative URLs when input is relative and allowed", () => {
       render(
         <HardenedReactMarkdown
