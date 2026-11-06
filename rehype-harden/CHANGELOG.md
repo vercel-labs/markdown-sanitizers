@@ -1,5 +1,11 @@
 # rehype-harden
 
+## 1.1.9
+
+### Patch Changes
+
+- fc55664: Preserve the resolved path for relative URLs whose normalized pathname begins with an empty segment (for example `/.//foo/bar` or `/a/..//foo/bar`). These are now emitted as `/.//foo/bar` so that they keep resolving to the same path on the same origin.
+
 ## 1.1.8
 
 ### Patch Changes
