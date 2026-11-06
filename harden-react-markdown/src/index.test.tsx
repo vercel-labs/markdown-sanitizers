@@ -1396,6 +1396,113 @@ This has [allowed link](https://github.com/repo) and [blocked link](https://bad.
     });
   });
 
+  describe("Relative URLs whose normalized pathname begins with an empty segment", () => {
+    const ORIGIN = "https://app.example";
+    const inputs = [
+      "/.//other.example/x.png",
+      "/././/other.example/x.png",
+      ".//other.example/x.png",
+      "/a/..//other.example/x.png",
+      "/..//other.example/x.png",
+      "../..//other.example/x.png",
+      "./..//other.example/x.png",
+      "/%2e//other.example/x.png",
+      "/%2E//other.example/x.png",
+      "/%2e%2e//other.example/x.png",
+      "/a/%2E%2e//other.example/x.png",
+      "/.%2e//other.example/x.png",
+      "/.///other.example/x.png",
+      "/.//other.example/x.png?q=1#frag",
+    ];
+
+    const expectSameOrigin = (value: string | null) => {
+      expect(value).not.toBeNull();
+      expect(value!.startsWith("//")).toBe(false);
+      expect(new URL(value!, `${ORIGIN}/chat/1`).origin).toBe(ORIGIN);
+    };
+
+    inputs.forEach((input) => {
+      it(`keeps markdown image and link on the same origin: ${input}`, () => {
+        const { container } = render(
+          <HardenedReactMarkdown
+            defaultOrigin={ORIGIN}
+            allowedLinkPrefixes={["/"]}
+            allowedImagePrefixes={["/"]}
+          >
+            {`![Img](<${input}>) [Link](<${input}>)`}
+          </HardenedReactMarkdown>,
+        );
+        const img = container.querySelector("img");
+        const link = container.querySelector("a");
+        expectSameOrigin(img!.getAttribute("src"));
+        expectSameOrigin(link!.getAttribute("href"));
+        // The DOM-resolved URL must be on the document's origin, not other.example
+        expect(new URL(img!.getAttribute("src")!, `${ORIGIN}/`).host).toBe("app.example");
+      });
+
+      it(`keeps raw HTML image and link on the same origin with rehypeRaw: ${input}`, () => {
+        const { container } = render(
+          <HardenedReactMarkdown
+            defaultOrigin={ORIGIN}
+            allowedLinkPrefixes={["/"]}
+            allowedImagePrefixes={["/"]}
+            rehypePlugins={[rehypeRaw]}
+          >
+            {`<img src="${input}" alt="x"> <a href="${input}">x</a>`}
+          </HardenedReactMarkdown>,
+        );
+        expectSameOrigin(container.querySelector("img")!.getAttribute("src"));
+        expectSameOrigin(container.querySelector("a")!.getAttribute("href"));
+      });
+
+      it(`keeps image on the same origin with a wildcard prefix: ${input}`, () => {
+        const { container } = render(
+          <HardenedReactMarkdown defaultOrigin={ORIGIN} allowedImagePrefixes={["*"]}>
+            {`![Img](<${input}>)`}
+          </HardenedReactMarkdown>,
+        );
+        expectSameOrigin(container.querySelector("img")!.getAttribute("src"));
+      });
+    });
+
+    [
+      "/.\\/other.example/x.png",
+      "/.\t//other.example/x.png",
+      "/a/..\\\\other.example/x.png",
+    ].forEach((input) => {
+      it(`keeps raw HTML with backslashes/whitespace on the same origin: ${JSON.stringify(input)}`, () => {
+        const { container } = render(
+          <HardenedReactMarkdown
+            defaultOrigin={ORIGIN}
+            allowedLinkPrefixes={["/"]}
+            allowedImagePrefixes={["/"]}
+            rehypePlugins={[rehypeRaw]}
+          >
+            {`<img src="${input}" alt="x"> <a href="${input}">x</a>`}
+          </HardenedReactMarkdown>,
+        );
+        expectSameOrigin(container.querySelector("img")!.getAttribute("src"));
+        expectSameOrigin(container.querySelector("a")!.getAttribute("href"));
+      });
+    });
+
+    ["//other.example/x.png", "///other.example/x.png"].forEach((input) => {
+      it(`still blocks network-path references: ${input}`, () => {
+        const { container } = render(
+          <HardenedReactMarkdown
+            defaultOrigin={ORIGIN}
+            allowedLinkPrefixes={["/"]}
+            allowedImagePrefixes={["/"]}
+          >
+            {`![Img](<${input}>) [Link](<${input}>)`}
+          </HardenedReactMarkdown>,
+        );
+        expect(container.querySelector("img")).toBeNull();
+        expect(container.querySelector("a")).toBeNull();
+      });
+    });
+  });
+
   describe("linkBlockPolicy option", () => {
     it("shows [blocked] suffix when 'indicator' (default)", () => {
       render(
